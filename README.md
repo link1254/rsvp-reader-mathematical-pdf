@@ -140,21 +140,9 @@ Brave is based on Chromium and
    page image can each be removed before copying or sending it.
 7. Open **Settings → Interface language** to choose **Automatic (browser)**,
    **Français**, or **English**. This choice also updates the context menu.
-8. In settings, enable **Try beta features** to try the
-   synchronized context. Disable it at any time to restore the previous stable
-   layout immediately.
-
 If a very short selection appears in several places in the document, the
 extension refuses to choose a page arbitrarily. Select a slightly longer
 sentence in that case.
-
-## Beta features
-
-Beta features are disabled by default. The first prototype keeps the current
-sentence in a stable area, highlights the same word as the RSVP reader, and
-scrolls that area only when needed. Available equation captures remain visual
-inside this context. The selected stable vertical or horizontal layout remains
-saved while testing the beta.
 
 ## Feedback reports
 

@@ -9,6 +9,10 @@ const layoutFixes = readFileSync(
   new URL('../src/fixes.css', import.meta.url),
   'utf8'
 );
+const sidepanelSource = readFileSync(
+  new URL('../src/sidepanel.js', import.meta.url),
+  'utf8'
+);
 
 describe('sidepanel layout', () => {
   it.each(['sidepanel.css', 'horizontal.css', 'fixes.css'])(
@@ -28,5 +32,14 @@ describe('sidepanel layout', () => {
     expect(layoutFixes).toContain('grid-template-columns:40px 52px 40px');
     expect(layoutFixes).toContain('.transport #replaySentence{position:absolute');
     expect(layoutFixes).toContain('.transport #play{grid-column:2}');
+  });
+
+  it('does not duplicate the passage with the removed synchronized context', () => {
+    expect(sidepanelHtml).not.toContain('id="betaFeatures"');
+    expect(sidepanelHtml).not.toContain('id="betaBadge"');
+    expect(sidepanelSource).not.toContain('createSynchronizedContext');
+    expect(sidepanelSource).toContain(
+      'if (_removedBetaFeature === true) supportedSettings.horizontalContext = false'
+    );
   });
 });

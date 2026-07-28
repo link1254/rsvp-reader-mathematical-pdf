@@ -376,21 +376,6 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 7. Les mots longs continuent de réduire leur taille si la fenêtre devient
    étroite.
 
-## Contexte synchronisé bêta de la version 0.15.28
-
-1. Le réglage **Tester les fonctionnalités bêta** est désactivé par défaut et
-   active uniquement le prototype du contexte synchronisé.
-2. Le mode stable vertical ou horizontal reste mémorisé pendant le test. La
-   désactivation de la bêta le restaure immédiatement.
-3. La phrase courante est construite une seule fois puis conservée tant que ses
-   limites ne changent pas. Chaque étape modifie seulement le mot actif.
-4. Le contexte se déplace uniquement lorsque le mot actif sort de la zone
-   visible. Un clic sur un mot déplace aussi la lecture RSVP.
-5. Les équations sont des éléments indivisibles et utilisent leur capture PDF
-   lorsqu'elle est disponible.
-6. Le prototype est isolé dans `src/synchronized-context.js` et sur la branche
-   `codex/synchronized-context-prototype`.
-
 ## Corrections importantes des versions 0.13.0 à 0.13.5
 
 1. Un numéro de section comme `1.2.` n'est plus confondu avec le numéro
@@ -451,11 +436,9 @@ Recharger la version 0.16.0 et effectuer les vérifications suivantes :
 - tester ce positionnement avec et sans **Contexte sur une ligne** ;
 - vérifier que les contextes voisins restent proches sans recouvrir le mot ;
 - vérifier que le contexte précédent est affiché sous la forme `…texte`.
-- activer les fonctionnalités bêta et vérifier le suivi du mot dans la phrase ;
 - basculer entre **Français** et **English** et vérifier le menu contextuel ;
 - vérifier qu'un numéro comme `(1.2)` disparaît du texte et reste visible dans
-  le coin inférieur droit de la capture d'équation.
-- cliquer sur un mot du contexte synchronisé puis revenir au mode stable.
+  l'espace situé à droite de la capture d'équation.
 
 ## Phrase à donner à Codex sur un nouvel ordinateur
 

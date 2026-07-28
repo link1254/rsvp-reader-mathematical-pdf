@@ -142,21 +142,9 @@ Brave repose sur Chromium et
 7. Ouvrir **Réglages → Langue de l’interface** pour choisir **Automatique
    (navigateur)**, **Français** ou **English**. Ce choix traduit également le
    menu contextuel.
-8. Dans les réglages, activer **Tester les fonctionnalités bêta** pour essayer
-   le contexte synchronisé. Désactiver ce réglage restaure immédiatement
-   l'affichage stable précédent.
-
 Si une sélection très courte apparaît à plusieurs endroits du document,
 l'extension refuse de choisir arbitrairement une page. Sélectionnez alors une
 phrase un peu plus longue.
-
-## Fonctionnalités bêta
-
-Les fonctionnalités bêta sont désactivées par défaut. Le premier prototype
-affiche la phrase courante dans une zone stable, met en évidence le même mot que
-le lecteur RSVP et fait défiler cette zone uniquement lorsque cela est
-nécessaire. Les captures d'équations disponibles sont conservées dans ce
-contexte. Le mode vertical ou horizontal stable reste mémorisé pendant le test.
 
 ## Signalement des problèmes
 

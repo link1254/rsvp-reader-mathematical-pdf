@@ -21,7 +21,6 @@ import {
 } from './reader-themes.js';
 import { readerContentScale } from './window-layout.js';
 import { initializeFeedback } from './feedback-ui.js';
-import { createSynchronizedContext } from './synchronized-context.js';
 import {
   applyDocumentTranslations,
   getUiLanguage,
@@ -36,7 +35,7 @@ const extensionStorage = api?.storage?.local ?? {
   set: async () => {}
 };
 const $ = selector => document.querySelector(selector);
-const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, betaFeatures: false, fontSize: 62, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
+const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, fontSize: 62, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
 let selectionLoadId = 0;
 let selectionAbortController = null;
 let feedbackController = null;
@@ -147,24 +146,7 @@ function equationImageFor(item) {
   return item.manualImage || state.equationImages[item.equationId] || null;
 }
 
-const synchronizedContext = createSynchronizedContext({
-  container: $('#sentenceContext'),
-  getItems: () => state.items,
-  getIndex: () => state.index,
-  getEquationImage: equationImageFor,
-  onNavigate: index => {
-    state.index = index;
-    render();
-    if (state.playing) schedule();
-  }
-});
-
 function renderSentence() {
-  if (state.betaFeatures) {
-    synchronizedContext.update();
-    return;
-  }
-  synchronizedContext.reset();
   const { start, end } = sentenceBounds(state.items, state.index);
   $('#sentenceContext').innerHTML = state.items.slice(start, end + 1).map((item, offset) => {
     const index = start + offset;
@@ -173,28 +155,17 @@ function renderSentence() {
 }
 
 function stableHorizontalContextEnabled() {
-  return state.horizontalContext && !state.betaFeatures;
+  return state.horizontalContext;
 }
 
 function applyContextLayout() {
   const viewport = $('.viewport');
   viewport.classList.toggle('context-horizontal', stableHorizontalContextEnabled());
-  viewport.classList.toggle('context-synchronized', state.betaFeatures);
-  $('#reader').classList.toggle('context-beta-active', state.betaFeatures);
-}
-
-function updateBetaInterface() {
-  $('#betaFeatures').checked = state.betaFeatures;
-  $('#horizontalContext').disabled = state.betaFeatures;
-  $('#horizontalContextSetting').classList.toggle('disabled', state.betaFeatures);
-  $('#betaSettingStatus').textContent = t(state.betaFeatures ? 'betaActive' : 'stableVersion');
-  $('#betaBadge').classList.toggle('hidden', !state.betaFeatures);
 }
 
 function applyLanguage() {
   setUiLanguage(state.uiLanguage);
   applyDocumentTranslations(document);
-  updateBetaInterface();
   if (state.items.length) render();
   else restoreWaitingUi();
   feedbackController?.refreshLanguage?.();
@@ -302,7 +273,6 @@ async function loadSelection(payload) {
   const loadId = ++selectionLoadId;
   pause();
   state.items = [];
-  synchronizedContext.reset();
   state.index = 0;
   state.equationImages = {};
   state.equationLookupComplete = false;
@@ -370,7 +340,6 @@ function clearSelection() {
   selectionLoadId++;
   pause();
   state.items = [];
-  synchronizedContext.reset();
   state.selectionPayload = null;
   state.pageCapture = null;
   state.pageNumber = null;
@@ -438,14 +407,6 @@ $('#horizontalContext').onchange = event => {
   render();
   save();
 };
-$('#betaFeatures').onchange = event => {
-  state.betaFeatures = event.target.checked;
-  synchronizedContext.reset();
-  applyContextLayout();
-  updateBetaInterface();
-  render();
-  save();
-};
 $('#readerFont').onchange = event => {
   state.readerFont = applyReaderFont(document.documentElement, event.target.value);
   save();
@@ -489,23 +450,27 @@ window.addEventListener('resize', () => {
 async function save() {
   await extensionStorage.set({
     uiLanguage: state.uiLanguage,
-    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, betaFeatures: state.betaFeatures, fontSize: state.fontSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
+    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, fontSize: state.fontSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
   });
 }
 async function restore() {
-  const { panelSettings = {}, uiLanguage = 'auto' } = await extensionStorage.get(['panelSettings', 'uiLanguage']); Object.assign(state, panelSettings);
+  const { panelSettings = {}, uiLanguage = 'auto' } = await extensionStorage.get(['panelSettings', 'uiLanguage']);
+  const { betaFeatures: _removedBetaFeature, ...supportedSettings } = panelSettings;
+  if (_removedBetaFeature === true) supportedSettings.horizontalContext = false;
+  Object.assign(state, supportedSettings);
+  if (Object.hasOwn(panelSettings, 'betaFeatures')) {
+    await extensionStorage.set({ panelSettings: supportedSettings });
+  }
   state.uiLanguage = normalizeUiLanguagePreference(uiLanguage);
   setUiLanguage(state.uiLanguage);
   applyDocumentTranslations(document);
   state.adaptivePacing = normalizeAdaptivePacing(state.adaptivePacing);
   state.horizontalContext = state.horizontalContext === true;
-  state.betaFeatures = state.betaFeatures === true;
   state.readerFont = normalizeReaderFont(state.readerFont);
   state.readerTheme = normalizeReaderTheme(state.readerTheme);
   applyReaderFont(document.documentElement, state.readerFont);
   applyReaderTheme(document.documentElement, state.readerTheme);
   applyContextLayout();
-  updateBetaInterface();
   $('#wpm').value = state.wpm; $('#wpmValue').textContent = state.wpm; $('#fontSize').value = state.fontSize; $('#contextSize').value = state.contextSize; $('#horizontalContext').checked = state.horizontalContext; $('#readerFont').value = state.readerFont; $('#readerTheme').value = state.readerTheme; $('#uiLanguage').value = state.uiLanguage;
   const radio = $(`[name="equationMode"][value="${state.equationMode}"]`); if (radio) radio.checked = true;
   const pacingRadio = $(`[name="adaptivePacing"][value="${state.adaptivePacing}"]`); if (pacingRadio) pacingRadio.checked = true;
