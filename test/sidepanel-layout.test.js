@@ -24,7 +24,10 @@ describe('sidepanel layout', () => {
 
   it('centers the captured expression and positions only its number to the right', () => {
     expect(layoutFixes).toContain('.equation-snapshot{display:block;justify-self:center');
-    expect(layoutFixes).toContain('.equation-label{position:absolute;right:8px');
+    expect(layoutFixes).toContain('padding:calc(5px * var(--reader-scale))');
+    expect(layoutFixes).toContain(
+      '.equation-label{position:absolute;right:calc(8px * var(--reader-scale))'
+    );
     expect(layoutFixes).toContain('font:700 calc(17px * var(--reader-scale))');
     expect(layoutFixes).not.toContain('grid-template-columns:minmax(0,1fr) max-content');
   });

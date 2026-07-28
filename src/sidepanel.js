@@ -20,7 +20,10 @@ import {
   normalizeReaderTheme
 } from './reader-themes.js';
 import { normalizeOverviewMathMode } from './overview-display.js';
-import { readerContentScale } from './window-layout.js';
+import {
+  equationSnapshotWidth,
+  readerContentScale
+} from './window-layout.js';
 import { initializeFeedback } from './feedback-ui.js';
 import {
   applyDocumentTranslations,
@@ -40,6 +43,7 @@ const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equa
 let selectionLoadId = 0;
 let selectionAbortController = null;
 let feedbackController = null;
+let currentReaderScale = 1;
 
 function restoreWaitingUi() {
   $('#waiting h1').textContent = t('selectPassage');
@@ -209,11 +213,19 @@ function applyLanguage() {
   feedbackController?.refreshLanguage?.();
 }
 
+function resizeEquationSnapshot(scale = currentReaderScale) {
+  const snapshot = $('#equationSnapshot');
+  const width = equationSnapshotWidth(snapshot.naturalWidth, scale);
+  if (width) snapshot.style.width = `${width}px`;
+}
+
 function applyResponsiveSizing(isEquation = state.items[state.index]?.type === 'equation') {
   const horizontal = matchMedia('(min-width: 600px)').matches;
   const viewport = $('.viewport');
   const scale = readerContentScale(viewport.clientHeight, horizontal);
+  currentReaderScale = scale;
   document.documentElement.style.setProperty('--reader-scale', String(scale));
+  resizeEquationSnapshot(scale);
   const baseSize = isEquation ? Math.max(38, state.fontSize * .7) : state.fontSize;
   const current = $('#current');
   const preferredSize = Math.round(baseSize * scale);
@@ -265,7 +277,15 @@ function render() {
     : (isEquation && state.equationLookupComplete
         ? (state.pageCapture ? t('frameManually') : t('notationUnidentified'))
         : t('analyzingPdfPage'));
-  if (isEquation && equationImage) $('#equationSnapshot').src = equationImage;
+  if (isEquation && equationImage) {
+    const snapshot = $('#equationSnapshot');
+    if (snapshot.getAttribute('src') !== equationImage) {
+      snapshot.style.removeProperty('width');
+      snapshot.src = equationImage;
+    } else {
+      resizeEquationSnapshot();
+    }
+  }
   $('#copyEquationImage').classList.toggle('hidden', !isEquation || !equationImage);
   $('#copyEquationImage').disabled = false;
   $('#copyEquationImage').textContent = t('copyImage');
@@ -405,6 +425,7 @@ function togglePlayback() {
 }
 
 $('#play').onclick = togglePlayback;
+$('#equationSnapshot').onload = () => resizeEquationSnapshot();
 $('#replaySentence').onclick = replaySentence;
 $('#back').onclick = () => move(-5); $('#forward').onclick = () => move(5);
 $('#continueEquation').onclick = continuePastEquation;

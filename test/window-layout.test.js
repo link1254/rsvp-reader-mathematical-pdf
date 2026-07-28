@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_READER_SIZE,
+  equationSnapshotWidth,
   readerContentScale,
   readerWindowLayout,
   readerWindowSize
@@ -69,5 +70,19 @@ describe('readerContentScale', () => {
   it('does not enlarge the compact vertical layout', () => {
     expect(readerContentScale(500, false)).toBe(1);
     expect(readerContentScale(undefined)).toBe(1);
+  });
+});
+
+describe('equationSnapshotWidth', () => {
+  it('enlarges equation captures with the reader content scale', () => {
+    expect(equationSnapshotWidth(240, 1)).toBe(250);
+    expect(equationSnapshotWidth(240, 1.25)).toBe(313);
+    expect(equationSnapshotWidth(240, 1.6)).toBe(400);
+  });
+
+  it('rejects invalid widths and clamps invalid scales', () => {
+    expect(equationSnapshotWidth(0, 1.4)).toBeNull();
+    expect(equationSnapshotWidth(240, 3)).toBe(400);
+    expect(equationSnapshotWidth(240, Number.NaN)).toBe(250);
   });
 });

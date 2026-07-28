@@ -34,5 +34,6 @@ describe('passage overview mathematics display', () => {
     expect(source).toContain("button.classList.add('math-preview')");
     expect(source).toContain("$('#overviewMathMode').value = state.overviewMathMode");
     expect(stylesheet).toContain('.paragraph-text button.math-preview img');
+    expect(stylesheet).toContain('max-height:calc(24px * var(--reader-scale))');
   });
 });
