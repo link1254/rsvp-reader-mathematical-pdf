@@ -38,6 +38,11 @@
 .paragraph-text button{border:0;border-radius:4px;background:transparent;color:#aeb8d1;padding:2px 3px;font-size:12px;cursor:pointer}
 .paragraph-text button.math{font-family:'Cambria Math',serif;color:#ffd780}
 .paragraph-text button.active{background:#ffd95b;color:#111827;font-weight:800;box-shadow:0 0 0 2px #ffd95b33}
+.paragraph-text button.math-preview{display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:28px;padding:2px 4px;border:1px solid #d6b96e;background:#f7f4ed;vertical-align:middle}
+.paragraph-text button.math-preview img{display:block;width:auto;height:auto;max-width:120px;max-height:24px;object-fit:contain}
+.paragraph-text button.math-preview.active{border-color:#ffd95b;background:#ffd95b}
+[data-reader-theme="minimal"] .paragraph-text button.math-preview{border-color:#6f5b32;border-radius:1px;background:#f4f4f2}
+[data-reader-theme="minimal"] .paragraph-text button.math-preview.active{border-color:#d6aa51;background:#d6aa51}
 .transport #replaySentence{font-size:24px;line-height:1}
 @media (max-width:430px){.context-horizontal .current{left:12px;right:12px}}
 .focus-letter{position:relative}

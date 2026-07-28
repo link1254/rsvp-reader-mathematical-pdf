@@ -140,6 +140,9 @@ Brave is based on Chromium and
    page image can each be removed before copying or sending it.
 7. Open **Settings → Interface language** to choose **Automatic (browser)**,
    **Français**, or **English**. This choice also updates the context menu.
+8. Under **Settings → Mathematics in the overview**, choose **Yellow labels**
+   or **Expression previews**. A notation without an available capture keeps
+   its yellow label.
 If a very short selection appears in several places in the document, the
 extension refuses to choose a page arbitrarily. Select a slightly longer
 sentence in that case.

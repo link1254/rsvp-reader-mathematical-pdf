@@ -19,6 +19,7 @@ import {
   applyReaderTheme,
   normalizeReaderTheme
 } from './reader-themes.js';
+import { normalizeOverviewMathMode } from './overview-display.js';
 import { readerContentScale } from './window-layout.js';
 import { initializeFeedback } from './feedback-ui.js';
 import {
@@ -35,7 +36,7 @@ const extensionStorage = api?.storage?.local ?? {
   set: async () => {}
 };
 const $ = selector => document.querySelector(selector);
-const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, fontSize: 62, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
+const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', fontSize: 62, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
 let selectionLoadId = 0;
 let selectionAbortController = null;
 let feedbackController = null;
@@ -146,6 +147,40 @@ function equationImageFor(item) {
   return item.manualImage || state.equationImages[item.equationId] || null;
 }
 
+function renderParagraphOverview() {
+  const fragment = document.createDocumentFragment();
+  state.items.forEach((item, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.index = String(index);
+
+    if (item.type === 'equation') {
+      button.classList.add('math');
+      const image = state.overviewMathMode === 'previews'
+        ? equationImageFor(item)
+        : null;
+      if (image) {
+        button.classList.add('math-preview');
+        button.setAttribute('aria-label', item.equationLabel
+          ? `${item.value} ${item.equationLabel}`
+          : item.value);
+        button.title = button.getAttribute('aria-label');
+        const preview = document.createElement('img');
+        preview.src = image;
+        preview.alt = '';
+        button.append(preview);
+      } else {
+        button.textContent = item.value;
+      }
+    } else {
+      button.textContent = item.value;
+    }
+
+    fragment.append(button, document.createTextNode(' '));
+  });
+  $('#paragraphText').replaceChildren(fragment);
+}
+
 function renderSentence() {
   const { start, end } = sentenceBounds(state.items, state.index);
   $('#sentenceContext').innerHTML = state.items.slice(start, end + 1).map((item, offset) => {
@@ -166,7 +201,10 @@ function applyContextLayout() {
 function applyLanguage() {
   setUiLanguage(state.uiLanguage);
   applyDocumentTranslations(document);
-  if (state.items.length) render();
+  if (state.items.length) {
+    renderParagraphOverview();
+    render();
+  }
   else restoreWaitingUi();
   feedbackController?.refreshLanguage?.();
 }
@@ -329,7 +367,7 @@ async function loadSelection(payload) {
     ? t('chooseNotation')
     : t('manualCaptureUnavailable');
   $('#seek').max = state.items.length - 1;
-  $('#paragraphText').innerHTML = state.items.map((item, index) => `<button data-index="${index}" class="${item.type === 'equation' ? 'math' : ''}">${escapeHtml(item.value)}</button>`).join(' ');
+  renderParagraphOverview();
   render();
   pause();
 }
@@ -407,6 +445,12 @@ $('#horizontalContext').onchange = event => {
   render();
   save();
 };
+$('#overviewMathMode').onchange = event => {
+  state.overviewMathMode = normalizeOverviewMathMode(event.target.value);
+  renderParagraphOverview();
+  render();
+  save();
+};
 $('#readerFont').onchange = event => {
   state.readerFont = applyReaderFont(document.documentElement, event.target.value);
   save();
@@ -450,7 +494,7 @@ window.addEventListener('resize', () => {
 async function save() {
   await extensionStorage.set({
     uiLanguage: state.uiLanguage,
-    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, fontSize: state.fontSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
+    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, overviewMathMode: state.overviewMathMode, fontSize: state.fontSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
   });
 }
 async function restore() {
@@ -466,12 +510,13 @@ async function restore() {
   applyDocumentTranslations(document);
   state.adaptivePacing = normalizeAdaptivePacing(state.adaptivePacing);
   state.horizontalContext = state.horizontalContext === true;
+  state.overviewMathMode = normalizeOverviewMathMode(state.overviewMathMode);
   state.readerFont = normalizeReaderFont(state.readerFont);
   state.readerTheme = normalizeReaderTheme(state.readerTheme);
   applyReaderFont(document.documentElement, state.readerFont);
   applyReaderTheme(document.documentElement, state.readerTheme);
   applyContextLayout();
-  $('#wpm').value = state.wpm; $('#wpmValue').textContent = state.wpm; $('#fontSize').value = state.fontSize; $('#contextSize').value = state.contextSize; $('#horizontalContext').checked = state.horizontalContext; $('#readerFont').value = state.readerFont; $('#readerTheme').value = state.readerTheme; $('#uiLanguage').value = state.uiLanguage;
+  $('#wpm').value = state.wpm; $('#wpmValue').textContent = state.wpm; $('#fontSize').value = state.fontSize; $('#contextSize').value = state.contextSize; $('#horizontalContext').checked = state.horizontalContext; $('#overviewMathMode').value = state.overviewMathMode; $('#readerFont').value = state.readerFont; $('#readerTheme').value = state.readerTheme; $('#uiLanguage').value = state.uiLanguage;
   const radio = $(`[name="equationMode"][value="${state.equationMode}"]`); if (radio) radio.checked = true;
   const pacingRadio = $(`[name="adaptivePacing"][value="${state.adaptivePacing}"]`); if (pacingRadio) pacingRadio.checked = true;
 }
@@ -547,5 +592,5 @@ $('#applyCrop').onclick = async () => {
   const image = await cropCaptureRect(state.pageCapture, state.cropRect);
   if (state.items[state.index]?.type === 'equation') state.items[state.index].manualImage = image;
   else { state.items.splice(state.index, 0, { value:t('manuallyCapturedEquation'), type:'equation', manualImage:image }); }
-  $('#seek').max = state.items.length - 1; $('#cropDialog').close(); render(); pause();
+  $('#seek').max = state.items.length - 1; $('#cropDialog').close(); renderParagraphOverview(); render(); pause();
 };

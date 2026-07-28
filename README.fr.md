@@ -142,6 +142,9 @@ Brave repose sur Chromium et
 7. Ouvrir **Réglages → Langue de l’interface** pour choisir **Automatique
    (navigateur)**, **Français** ou **English**. Ce choix traduit également le
    menu contextuel.
+8. Dans **Réglages → Mathématiques dans l’aperçu**, choisir entre les
+   **Libellés jaunes** et les **Miniatures des expressions**. Une notation sans
+   capture disponible conserve son libellé jaune.
 Si une sélection très courte apparaît à plusieurs endroits du document,
 l'extension refuse de choisir arbitrairement une page. Sélectionnez alors une
 phrase un peu plus longue.
