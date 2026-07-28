@@ -270,9 +270,9 @@ export function playbackAction({
   equationMode
 }) {
   if (!items?.length) return 'none';
-  if (playing) return 'pause';
   if (items[index]?.type === 'equation' && equationMode === 'manual') {
     return index >= items.length - 1 ? 'finish-equation' : 'continue-equation';
   }
+  if (playing) return 'pause';
   return 'play';
 }

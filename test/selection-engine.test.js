@@ -167,6 +167,8 @@ describe('PDF selection engine', () => {
 
     expect(playbackAction({ items, index: 0, playing: false, equationMode: 'manual' }))
       .toBe('continue-equation');
+    expect(playbackAction({ items, index: 0, playing: true, equationMode: 'manual' }))
+      .toBe('continue-equation');
     expect(playbackAction({ items: items.slice(0, 1), index: 0, playing: false, equationMode: 'manual' }))
       .toBe('finish-equation');
     expect(playbackAction({ items, index: 0, playing: false, equationMode: 'auto' }))

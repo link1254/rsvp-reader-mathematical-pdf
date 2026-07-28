@@ -31,6 +31,8 @@ describe('sidepanel layout', () => {
 
   it('centers the three primary playback controls independently', () => {
     expect(layoutFixes).toContain('grid-template-columns:40px 52px 40px');
+    expect(layoutFixes).toContain('.progress{align-self:start}');
+    expect(layoutFixes).toContain('.transport{position:relative;z-index:2');
     expect(layoutFixes).toContain('.transport #replaySentence{position:absolute');
     expect(layoutFixes).toContain('.transport #play{grid-column:2}');
   });

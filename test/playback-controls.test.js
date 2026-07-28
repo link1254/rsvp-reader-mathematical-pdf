@@ -5,6 +5,10 @@ const source = readFileSync(
   new URL('../src/sidepanel.js', import.meta.url),
   'utf8'
 );
+const html = readFileSync(
+  new URL('../src/sidepanel.html', import.meta.url),
+  'utf8'
+);
 
 describe('reader playback controls', () => {
   it('opens every newly loaded selection in pause', () => {
@@ -13,6 +17,7 @@ describe('reader playback controls', () => {
   });
 
   it('routes the play button and space bar through the same action', () => {
+    expect(html).toContain('<button id="play" type="button">');
     expect(source).toContain("$('#play').onclick = togglePlayback");
     expect(source).toMatch(/event\.code === 'Space'[\s\S]+togglePlayback\(\)/);
     expect(source).toContain("action === 'continue-equation'");
