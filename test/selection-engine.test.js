@@ -119,6 +119,23 @@ describe('PDF selection engine', () => {
     expect(readingDelay({ type: 'word', value: '2026' }, 300, 'normal')).toBe(230);
     expect(readingDelay({ type: 'word', value: 'QFT' }, 300, 'normal')).toBe(230);
   });
+  it('pauses at opening and closing parentheses', () => {
+    const plain = { type: 'word', value: 'hypothèse' };
+    const opening = { type: 'word', value: '(hypothèse' };
+    const closing = { type: 'word', value: 'hypothèse)' };
+    const wrapped = { type: 'word', value: '(hypothèse)' };
+
+    expect(readingDelay(opening, 300, 'normal')
+      - readingDelay(plain, 300, 'normal')).toBe(150);
+    expect(readingDelay(closing, 300, 'normal')
+      - readingDelay(plain, 300, 'normal')).toBe(150);
+    expect(readingDelay(wrapped, 300, 'normal')
+      - readingDelay(plain, 300, 'normal')).toBe(300);
+    expect(readingDelay(opening, 600, 'normal')
+      - readingDelay(plain, 600, 'normal')).toBe(150);
+    expect(readingDelay(wrapped, 300, 'off'))
+      .toBe(readingDelay(plain, 300, 'off'));
+  });
   it('supports fixed timing and bounded adaptive profiles', () => {
     const difficult = { type: 'word', value: 'extraordinairementlongue.' };
 

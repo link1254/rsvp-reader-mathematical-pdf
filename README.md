@@ -32,8 +32,8 @@ idea useful can help test, fix, and improve it.
 ## Features
 
 - RSVP reading of text selected directly in the browser's PDF viewer, with
-  adjustable speed, adaptive pacing for difficult words, navigation, and
-  passage context;
+  adjustable speed, adaptive pacing for difficult words and parentheses,
+  navigation, and passage context;
 - local detection of mathematical notation, displayed as faithful PDF snapshots
   instead of uncertain transcription;
 - extraction of common equation labels such as `(2.4)`, `(A.3a)`, `[4.2]`, or

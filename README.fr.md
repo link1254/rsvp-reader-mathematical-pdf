@@ -35,8 +35,8 @@ améliorer l'outil.
 ## Fonctionnalités
 
 - lecture RSVP du texte sélectionné directement dans le lecteur PDF du
-  navigateur, avec vitesse, rythme adaptatif pour les mots difficiles,
-  navigation et contexte réglables ;
+  navigateur, avec vitesse, rythme adaptatif pour les mots difficiles et les
+  parenthèses, navigation et contexte réglables ;
 - détection locale des notations mathématiques, affichées comme des captures
   fidèles du PDF plutôt que comme une transcription incertaine ;
 - extraction des numéros d'équation courants comme `(2.4)`, `(A.3a)`, `[4.2]`

@@ -358,6 +358,10 @@ Les raisons techniques et la stratégie générale sont détaillées dans
    confondus avec des changements de paragraphe.
 6. Les limites de paragraphe servent aussi à la reprise par phrase lorsqu'un
    paragraphe ne se termine pas par un signe de ponctuation.
+7. Les parenthèses ajoutent une pause structurelle à leur ouverture et à leur
+   fermeture : `90 ms` en profil léger, `150 ms` en profil normal et `220 ms`
+   en profil fort. Une paire contenue dans le même élément cumule les deux
+   pauses ; le profil désactivé n'en ajoute aucune.
 
 ## Mots longs et repère ORP des versions 0.15.26 et 0.15.27
 

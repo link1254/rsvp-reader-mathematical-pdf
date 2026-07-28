@@ -19,6 +19,7 @@ const PACING_PROFILES = Object.freeze({
     numberBonus: 0,
     acronymBonus: 0,
     clauseBonus: 0,
+    parenthesisPause: 0,
     sentencePause: 0,
     paragraphPause: 0,
     maximumFactor: 1
@@ -29,6 +30,7 @@ const PACING_PROFILES = Object.freeze({
     numberBonus: .08,
     acronymBonus: .08,
     clauseBonus: .3,
+    parenthesisPause: 90,
     sentencePause: 200,
     paragraphPause: 400,
     maximumFactor: 2.2
@@ -39,6 +41,7 @@ const PACING_PROFILES = Object.freeze({
     numberBonus: .15,
     acronymBonus: .15,
     clauseBonus: .5,
+    parenthesisPause: 150,
     sentencePause: 300,
     paragraphPause: 600,
     maximumFactor: 2.8
@@ -49,6 +52,7 @@ const PACING_PROFILES = Object.freeze({
     numberBonus: .25,
     acronymBonus: .2,
     clauseBonus: .7,
+    parenthesisPause: 220,
     sentencePause: 400,
     paragraphPause: 800,
     maximumFactor: 3.4
@@ -218,6 +222,10 @@ function isAcronym(value) {
       && letter !== letter.toLocaleLowerCase());
 }
 
+function parenthesisBoundaryCount(value) {
+  return Number(/[（(]/u.test(value)) + Number(/[）)]/u.test(value));
+}
+
 function endsSentence(item) {
   return item?.paragraphEnd === true
     || /[.!?…]+[”’"'»)\]]*$/u.test(String(item?.value || ''));
@@ -259,7 +267,8 @@ export function readingDelay(item, wpm, pacingMode = DEFAULT_ADAPTIVE_PACING) {
   const adaptiveDelay = base * Math.min(profile.maximumFactor, 1 + bonus)
     + lengthDelay;
   const structuralPause = (sentenceEnd ? profile.sentencePause : 0)
-    + (item.paragraphEnd ? profile.paragraphPause : 0);
+    + (item.paragraphEnd ? profile.paragraphPause : 0)
+    + parenthesisBoundaryCount(value) * profile.parenthesisPause;
   return Math.round(adaptiveDelay + structuralPause);
 }
 
