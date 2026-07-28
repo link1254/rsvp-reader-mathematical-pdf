@@ -1,3 +1,5 @@
+import { parseEquationLabel } from './selection-engine.js';
+
 function comparableCharacters(value, itemIndex = null) {
   const entries = [];
   for (let offset = 0; offset < value.length;) {
@@ -642,10 +644,104 @@ function hasParagraphGap(previous, current, lineHeight) {
   return lineRestart && verticalGap > lineHeight * 1.55;
 }
 
+function combinedTextItemRect(items, viewport) {
+  const rects = items.map(item => textItemRect(item, viewport));
+  const x = Math.min(...rects.map(rect => rect.x));
+  const y = Math.min(...rects.map(rect => rect.y));
+  const right = Math.max(...rects.map(rect => rect.x + rect.width));
+  const bottom = Math.max(...rects.map(rect => rect.y + rect.height));
+  return {
+    x,
+    y,
+    width: right - x,
+    height: bottom - y,
+    baseline: rects.reduce((sum, rect) => sum + rect.baseline, 0) / rects.length
+  };
+}
+
+function equationLabelCandidates(items, viewport, selection) {
+  const candidates = [];
+  for (let start = selection.start; start <= selection.end; start++) {
+    for (let length = 1; length <= Math.min(5, selection.end - start + 1); length++) {
+      const labelItems = items.slice(start, start + length);
+      if (labelItems.some(item => !item?.str)) continue;
+      const rect = combinedTextItemRect(labelItems, viewport);
+      const baselines = labelItems.map(item => textItemRect(item, viewport).baseline);
+      if (Math.max(...baselines) - Math.min(...baselines) > Math.max(5, rect.height * .45)) {
+        continue;
+      }
+      const value = labelItems.map(item => item.str.trim()).join('');
+      const wrappedLabel = parseEquationLabel(value);
+      const label = wrappedLabel || (length === 1
+        ? parseEquationLabel(value, { allowBare: true })
+        : null);
+      if (!label) continue;
+      candidates.push({
+        label,
+        wrapped: Boolean(wrappedLabel),
+        start,
+        end: start + length - 1,
+        rect
+      });
+    }
+  }
+
+  const wrapped = candidates.filter(candidate => candidate.wrapped);
+  return candidates.filter(candidate => candidate.wrapped
+    || !wrapped.some(other => candidate.start >= other.start && candidate.end <= other.end));
+}
+
+function associateEquationLabels(items, viewport, regions, selection) {
+  const candidates = equationLabelCandidates(items, viewport, selection);
+  const pairs = [];
+  for (const candidate of candidates) {
+    const centerX = candidate.rect.x + candidate.rect.width / 2;
+    const centerY = candidate.rect.y + candidate.rect.height / 2;
+    for (const region of regions) {
+      if (region.kind !== 'display') continue;
+      const regionCenterX = region.x + region.width / 2;
+      const regionCenterY = region.y + region.height / 2;
+      const verticalDistance = Math.abs(centerY - regionCenterY);
+      if (centerX <= regionCenterX + region.width * .2
+        || candidate.rect.x < region.x + region.width * .6
+        || (!candidate.wrapped
+          && candidate.rect.x < region.x + region.width + Math.max(4, region.height * .15))
+        || verticalDistance > Math.max(candidate.rect.height, region.height) * .7) {
+        continue;
+      }
+      const horizontalGap = Math.max(0, candidate.rect.x - region.x - region.width);
+      pairs.push({
+        candidate,
+        region,
+        score: verticalDistance * 10 + horizontalGap
+      });
+    }
+  }
+
+  const labelsByRegion = new Map();
+  const labelItems = new Set();
+  const assignedCandidates = new Set();
+  for (const pair of pairs.sort((first, second) => first.score - second.score)) {
+    if (labelsByRegion.has(pair.region) || assignedCandidates.has(pair.candidate)) continue;
+    labelsByRegion.set(pair.region, pair.candidate.label);
+    assignedCandidates.add(pair.candidate);
+    for (let index = pair.candidate.start; index <= pair.candidate.end; index++) {
+      labelItems.add(index);
+    }
+  }
+  return { labelsByRegion, labelItems };
+}
+
 export function buildSelectionSegments(items, viewport, regions, selection) {
   if (!selection) return [];
   const segments = [];
   const emittedRegions = new Set();
+  const { labelsByRegion, labelItems } = associateEquationLabels(
+    items,
+    viewport,
+    regions,
+    selection
+  );
   const lineHeight = bodyTextHeight(items, selection);
   let previousItem = null;
   for (let itemIndex = selection.start; itemIndex <= selection.end; itemIndex++) {
@@ -655,6 +751,10 @@ export function buildSelectionSegments(items, viewport, regions, selection) {
     if (hasParagraphGap(previousItem, item, lineHeight)) {
       const previousSegment = segments.at(-1);
       if (previousSegment?.type === 'text') previousSegment.paragraphEnd = true;
+    }
+    if (labelItems.has(itemIndex)) {
+      previousItem = item;
+      continue;
     }
     const start = itemIndex === selection.start ? selection.startChar : 0;
     const end = itemIndex === selection.end ? selection.endChar : value.length;
@@ -668,7 +768,14 @@ export function buildSelectionSegments(items, viewport, regions, selection) {
       const region = regionForCharacter(regions, rect, x);
       if (region) {
         if (!emittedRegions.has(region)) {
-          segments.push({ type: 'math', region, regionIndex: regions.indexOf(region) });
+          const mathSegment = {
+            type: 'math',
+            region,
+            regionIndex: regions.indexOf(region)
+          };
+          const equationLabel = labelsByRegion.get(region);
+          if (equationLabel) mathSegment.equationLabel = equationLabel;
+          segments.push(mathSegment);
           emittedRegions.add(region);
         }
       } else {

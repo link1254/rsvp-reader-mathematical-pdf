@@ -3,6 +3,7 @@ import {
   ADAPTIVE_PACING_MODES,
   isEquationLike,
   normalizeAdaptivePacing,
+  parseEquationLabel,
   playbackAction,
   readingDelay,
   replaySentenceIndex,
@@ -12,6 +13,14 @@ import {
 } from '../src/selection-engine.js';
 
 describe('PDF selection engine', () => {
+  it('recognizes common equation label formats', () => {
+    for (const label of ['(1)', '(2.4)', '(2.4a)', '(A.3)', '(A3)', '(IV.2)', '[4.2]']) {
+      expect(parseEquationLabel(label)).toBe(label);
+    }
+    expect(parseEquationLabel('4.2')).toBeNull();
+    expect(parseEquationLabel('4.2', { allowBare: true })).toBe('4.2');
+    expect(parseEquationLabel('Eq. (4.2)')).toBeNull();
+  });
   it('recognizes display equations', () => {
     expect(isEquationLike('E = mc²')).toBe(true);
     expect(isEquationLike('∫ f(x) dx = F(x) + C')).toBe(true);
@@ -180,7 +189,8 @@ describe('PDF selection engine', () => {
     const items = tokenizeSelection(text);
     const equation = items.find(item => item.type === 'equation');
     expect(equation?.value).toContain('+m2c4 ψ(t,x)');
-    expect(equation?.value).toContain('(1.2)');
+    expect(equation?.value).not.toContain('(1.2)');
+    expect(equation?.equationLabel).toBe('(1.2)');
     expect(items.filter(item => item.type === 'equation')).toHaveLength(1);
   });
   it('keeps compact powers inside the numbered equation instead of splitting it', () => {
@@ -188,8 +198,9 @@ describe('PDF selection engine', () => {
     const equations = tokenizeSelection(text).filter(item => item.type === 'equation');
 
     expect(equations).toEqual([{
-      value: '(i ∂t − m2c4 − 2c2∇2)ψ(t,x) = 0. (1.5)',
-      type: 'equation'
+      value: '(i ∂t − m2c4 − 2c2∇2)ψ(t,x) = 0.',
+      type: 'equation',
+      equationLabel: '(1.5)'
     }]);
   });
   it('groups a formula when Edge puts its number on a separate line', () => {
@@ -197,16 +208,27 @@ describe('PDF selection engine', () => {
     const items = tokenizeSelection(text);
     const equations = items.filter(item => item.type === 'equation');
     expect(equations).toHaveLength(1);
-    expect(equations[0].value).toContain('(1.2)');
+    expect(equations[0].value).not.toContain('(1.2)');
+    expect(equations[0].equationLabel).toBe('(1.2)');
     expect(items.some(item => item.value === '+m2c4')).toBe(false);
+  });
+  it('reassembles a fragmented appendix equation label', () => {
+    const equations = tokenizeSelection('The result is E = mc² ( A . 3a ) Therefore it holds.')
+      .filter(item => item.type === 'equation');
+
+    expect(equations).toEqual([{
+      value: 'E = mc²',
+      type: 'equation',
+      equationLabel: '(A.3a)'
+    }]);
   });
   it('handles the PDF glyphs and equations from the reference page', () => {
     const text = 'Its most obvious generalization is given by the Klein-Gordon equation ( ℏ 2 ∂ 2 t − c 2 ℏ 2 ∇ 2 + m 2 c 4 ) ψ ( t, x ) ≡ ( ℏ 2 \u0003 + m 2 c 4 ) ψ ( t, x ) = 0 . (1.2) The D’Alembertian operator \u0003 = ∂ 2 t − c 2 ∇ 2 ensures invariance. Consequently Schroedinger : E = ℏ 2 k 2 2 m ⇒ Klein − Gordon : E = ± c √ m 2 c 2 + ℏ 2 k 2 . (1.3)';
     const equations = tokenizeSelection(text).filter(item => item.type === 'equation');
 
-    expect(equations.find(item => item.value.includes('(1.2)'))?.value).toContain('ℏ 2 ∂ 2 t');
+    expect(equations.find(item => item.equationLabel === '(1.2)')?.value).toContain('ℏ 2 ∂ 2 t');
     expect(equations.find(item => item.value.startsWith('□ ='))?.value).toBe('□ = ∂ 2 t − c 2 ∇ 2');
-    expect(equations.find(item => item.value.includes('(1.3)'))?.value).toMatch(/^E = ± c √/);
+    expect(equations.find(item => item.equationLabel === '(1.3)')?.value).toMatch(/^E = ± c √/);
     expect(equations.some(item => item.value === '=')).toBe(false);
   });
 });

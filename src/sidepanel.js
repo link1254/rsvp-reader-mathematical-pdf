@@ -1,5 +1,6 @@
 import {
   normalizeAdaptivePacing,
+  parseEquationLabel,
   playbackAction,
   readingDelay,
   replaySentenceIndex,
@@ -208,7 +209,7 @@ function render() {
   if (!state.items.length) return;
   const item = state.items[state.index];
   const isEquation = item.type === 'equation';
-  const equationLabel = item.value.match(/\(\d+(?:\.\d+)*\)/)?.[0];
+  const equationLabel = item.equationLabel || parseEquationLabel(item.value);
   const equationImage = equationImageFor(item);
   setContextText($('#previous'), context(state.index - state.contextSize, state.index));
   setContextText($('#next'), context(state.index + 1, state.index + 1 + state.contextSize));
@@ -222,10 +223,15 @@ function render() {
         ? (item.errorMessage || 'Capture fidèle indisponible')
         : 'Recherche dans le PDF…')
     : '';
-  $('#equationSnapshot').classList.toggle('hidden', !isEquation || !equationImage);
+  $('#equationVisual').classList.toggle('hidden', !isEquation || !equationImage);
   $('#equation').classList.toggle('hidden', isEquation && !!equationImage);
+  $('#equationLabel').textContent = equationLabel || '';
+  $('#equationLabel').classList.toggle(
+    'hidden',
+    !isEquation || !equationImage || !equationLabel
+  );
   $('#equationSource').textContent = isEquation && equationImage
-    ? `Détection locale — capture du PDF ${equationLabel || ''}`
+    ? 'Détection locale — capture du PDF'
     : (isEquation && state.equationLookupComplete
         ? (state.pageCapture ? 'Encadrez cette formule manuellement' : 'Notation non identifiée')
         : 'Analyse locale de la page PDF');

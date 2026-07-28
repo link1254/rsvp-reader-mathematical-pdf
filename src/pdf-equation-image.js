@@ -10,7 +10,10 @@ import {
   confirmWeakMathRegions,
   locateSelectionItems
 } from './pdf-selection-layout.js';
-import { tokenizeDetectedProse } from './selection-engine.js';
+import {
+  parseEquationLabel,
+  tokenizeDetectedProse
+} from './selection-engine.js';
 import { selectionSearchProgress } from './loading-progress.js';
 
 function reportDetectionProgress(onStatus, stage) {
@@ -318,13 +321,15 @@ export function visualRsvpItems(segments, canvas, pageNumber) {
       const image = cropMathRegion(canvas, region, region.kind === 'display' ? 8 : 5);
       if (!image) continue;
       images[equationId] = image;
-      items.push({
+      const equationItem = {
         value: region.kind === 'display' ? 'Équation' : 'Notation mathématique',
         type: 'equation',
         equationId,
         mathKind: region.kind,
         confidence: region.confidence
-      });
+      };
+      if (segment.equationLabel) equationItem.equationLabel = segment.equationLabel;
+      items.push(equationItem);
       continue;
     }
     const tokens = tokenizeDetectedProse(segment.value);
@@ -410,7 +415,13 @@ export async function renderEquationFromPdf(payload, onStatus = () => {}, equati
     const normalized = typeof request === 'string'
       ? { id: `equation-${index}`, value: request, before: '', after: '' }
       : request;
-    return { ...normalized, label: normalized.label || normalized.value.match(/\(\d+(?:\.\d+)*\)/)?.[0] || null };
+    return {
+      ...normalized,
+      label: normalized.equationLabel
+        || normalized.label
+        || parseEquationLabel(normalized.value)
+        || null
+    };
   });
   const requestedLabels = [...new Set(requestedEquations.map(request => request.label).filter(Boolean))];
   const requestedInline = requestedEquations.filter(request => !request.label);

@@ -63,6 +63,61 @@ describe('visual PDF selection layout', () => {
     expect(segments[0].type).toBe('math');
   });
 
+  it('moves a split right-side equation label onto the display equation', () => {
+    const items = [
+      item('E = mc2', 100, 80, 500),
+      item('(', 430, 4, 500),
+      item('A', 434, 6, 500),
+      item('.', 440, 3, 500),
+      item('3a', 443, 10, 500),
+      item(')', 453, 4, 500)
+    ];
+    const selection = {
+      start: 0,
+      end: items.length - 1,
+      startChar: 0,
+      endChar: items.at(-1).str.length
+    };
+    const regions = [
+      { x: 95, y: 86, width: 90, height: 20, kind: 'display', confidence: .94 }
+    ];
+
+    const segments = buildSelectionSegments(items, viewport, regions, selection);
+
+    expect(segments).toEqual([{
+      type: 'math',
+      region: regions[0],
+      regionIndex: 0,
+      equationLabel: '(A.3a)'
+    }]);
+  });
+
+  it('accepts a bare equation label only beside a display equation', () => {
+    const items = [
+      item('F(x) = 0', 100, 80, 500),
+      item('4.2', 430, 18, 500),
+      item('A prose reference [7] remains here.', 10, 180, 475)
+    ];
+    const selection = {
+      start: 0,
+      end: items.length - 1,
+      startChar: 0,
+      endChar: items.at(-1).str.length
+    };
+    const regions = [
+      { x: 95, y: 86, width: 90, height: 20, kind: 'display', confidence: .94 }
+    ];
+
+    const segments = buildSelectionSegments(items, viewport, regions, selection);
+    const text = segments.filter(segment => segment.type === 'text')
+      .map(segment => segment.value)
+      .join(' ');
+
+    expect(segments[0]).toMatchObject({ type: 'math', equationLabel: '4.2' });
+    expect(text).toContain('[7]');
+    expect(text).not.toContain('4.2');
+  });
+
   it('does not include a preceding equation when the selection starts with prose', () => {
     const items = [
       item('H ≡ π(x) φ(x) − L(φ, π)', 100, 170, 520),

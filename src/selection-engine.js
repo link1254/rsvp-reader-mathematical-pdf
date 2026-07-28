@@ -4,7 +4,10 @@ const TEX_COMMAND = /\\(?:frac|sqrt|sum|int|prod|lim|begin|end|alpha|beta|gamma|
 const MATH_CHARS = /[=≡+−–*/^_<>≈≠≤≥±×÷∝→↦∑∫∏√∞∂∇{}[\]()]|[⁰¹²³⁴⁵⁶⁷⁸⁹]|[₀₁₂₃₄₅₆₇₈₉]/g;
 const MATH_CHAR = /[=≡+−–*/^_<>≈≠≤≥±×÷∝→↦∑∫∏√∞∂∇□{}[\]()]|[⁰¹²³⁴⁵⁶⁷⁸⁹]|[₀₁₂₃₄₅₆₇₈₉]/;
 const GLYPH_MATH = /^[0-9A-Za-zΑ-ωℏħψφχρμνλσπτδεγ∂∇□=≡+−–*/^_<>≈≠≤≥±×÷∝→↦⇒∑∫∏√∞{}[\](),.;:⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]+$/;
-const EQUATION_NUMBER = /^\(\d+(?:\.\d+)*\)[.,;:]?$/;
+const EQUATION_LABEL_CORE = String.raw`(?:\d+(?:[.:-]\d+)*(?:[a-z])?|(?:[A-Z]|[IVXLCDM]{2,})(?:[.:-]?\d+)+(?:[a-z])?)`;
+const PARENTHESIZED_EQUATION_LABEL = new RegExp(`^\\(\\s*(${EQUATION_LABEL_CORE})\\s*\\)$`, 'i');
+const BRACKETED_EQUATION_LABEL = new RegExp(`^\\[\\s*(${EQUATION_LABEL_CORE})\\s*\\]$`, 'i');
+const BARE_EQUATION_LABEL = new RegExp(`^${EQUATION_LABEL_CORE}$`, 'i');
 const STRONG_MATH_SIGNAL = /[=≡+−–*/^_<>≈≠≤≥±×÷∝→↦∑∫∏√∞∂∇□\u0370-\u03ffℏħ]/u;
 export const ADAPTIVE_PACING_MODES = Object.freeze(['off', 'light', 'normal', 'strong']);
 export const DEFAULT_ADAPTIVE_PACING = 'normal';
@@ -57,10 +60,25 @@ function isMathGlyphToken(word) {
   return word.length <= 3 || /\d/.test(word) || MATH_CHAR.test(word);
 }
 
+export function parseEquationLabel(value, { allowBare = false } = {}) {
+  const text = String(value || '')
+    .normalize('NFC')
+    .trim()
+    .replace(/^（/, '(')
+    .replace(/）[.,;:]?$/, ')')
+    .replace(/([)\]])[.,;:]$/, '$1');
+  let match = text.match(PARENTHESIZED_EQUATION_LABEL);
+  if (match) return `(${match[1]})`;
+  match = text.match(BRACKETED_EQUATION_LABEL);
+  if (match) return `[${match[1]}]`;
+  match = allowBare ? text.match(BARE_EQUATION_LABEL) : null;
+  return match?.[0] || null;
+}
+
 export function isEquationLike(value) {
   const text = value.trim();
   if (!text || text.length > 160) return false;
-  if (MATH_OPERATOR.test(text) || EQUATION_NUMBER.test(text)) return false;
+  if (MATH_OPERATOR.test(text) || parseEquationLabel(text)) return false;
   if (TEX_COMMAND.test(text)) return true;
   if (/[\u0370-\u03ffℏħ∂∇∑∫∏√∞]/u.test(text)) return true;
   const words = text.split(/\s+/).filter(Boolean);
@@ -111,7 +129,7 @@ function splitInlineMath(line) {
 
 function isDenseMathToken(word) {
   if (!word) return false;
-  if (EQUATION_NUMBER.test(word)) return false;
+  if (parseEquationLabel(word)) return false;
   if (/^[()[\]{}.,;:]$/.test(word)) return true;
   if (MATH_CHAR.test(word)) return true;
   if (/[Α-ωℏħψφχρμνλσπτδεγ]/.test(word)) return true;
@@ -121,16 +139,33 @@ function isDenseMathToken(word) {
   return /^(?:[A-Za-z]\d*[.,;:]?|[+−-]?\d+(?:[.,]\d+)?[.,;:]?)$/.test(word);
 }
 
+function equationLabelAt(words, start) {
+  for (let length = Math.min(5, words.length - start); length >= 1; length--) {
+    const label = parseEquationLabel(words.slice(start, start + length).join(''));
+    if (label) return { label, length };
+  }
+  return null;
+}
+
 function splitNumberedEquations(line) {
   const words = line.split(/\s+/).filter(Boolean);
   const ranges = [];
-  for (let label = 0; label < words.length; label++) {
-    if (!EQUATION_NUMBER.test(words[label])) continue;
-    let start = label - 1;
+  for (let labelIndex = 0; labelIndex < words.length; labelIndex++) {
+    const labelMatch = equationLabelAt(words, labelIndex);
+    if (!labelMatch) continue;
+    let start = labelIndex - 1;
     while (start >= 0 && isDenseMathToken(words[start])) start--;
     start++;
     if (words[start] === ':') start++;
-    if (label - start >= 4) ranges.push({ start, end: label, value: words.slice(start, label + 1).join(' ') });
+    const value = words.slice(start, labelIndex).join(' ');
+    if (labelIndex - start >= 4 || isEquationLike(value)) {
+      ranges.push({
+        start,
+        end: labelIndex + labelMatch.length - 1,
+        value,
+        equationLabel: labelMatch.label
+      });
+    }
   }
   if (!ranges.length) return splitInlineMath(line);
 
@@ -139,7 +174,11 @@ function splitNumberedEquations(line) {
   for (const range of ranges) {
     if (range.start < cursor) continue;
     if (range.start > cursor) output.push(...splitInlineMath(words.slice(cursor, range.start).join(' ')));
-    output.push({ value: range.value, type: 'equation' });
+    output.push({
+      value: range.value,
+      type: 'equation',
+      equationLabel: range.equationLabel
+    });
     cursor = range.end + 1;
   }
   if (cursor < words.length) output.push(...splitInlineMath(words.slice(cursor).join(' ')));
