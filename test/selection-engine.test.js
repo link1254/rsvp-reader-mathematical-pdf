@@ -133,6 +133,8 @@ describe('PDF selection engine', () => {
       - readingDelay(plain, 300, 'normal')).toBe(300);
     expect(readingDelay(opening, 600, 'normal')
       - readingDelay(plain, 600, 'normal')).toBe(150);
+    expect(readingDelay(opening, 300, 'extreme')
+      - readingDelay(plain, 300, 'extreme')).toBe(320);
     expect(readingDelay(wrapped, 300, 'off'))
       .toBe(readingDelay(plain, 300, 'off'));
   });
@@ -145,6 +147,8 @@ describe('PDF selection engine', () => {
     expect(readingDelay(difficult, 300, 'normal'))
       .toBeLessThan(readingDelay(difficult, 300, 'strong'));
     expect(readingDelay(difficult, 300, 'strong')).toBeLessThanOrEqual(1200);
+    expect(readingDelay(difficult, 300, 'strong'))
+      .toBeLessThan(readingDelay(difficult, 300, 'extreme'));
   });
   it('restarts the current sentence, then moves to the previous one', () => {
     const items = [
@@ -164,8 +168,10 @@ describe('PDF selection engine', () => {
     expect(sentenceBounds(items, 6)).toEqual({ start: 6, end: 7 });
   });
   it('normalizes stored adaptive pacing values safely', () => {
-    expect(ADAPTIVE_PACING_MODES).toEqual(['off', 'light', 'normal', 'strong']);
+    expect(ADAPTIVE_PACING_MODES)
+      .toEqual(['off', 'light', 'normal', 'strong', 'extreme']);
     expect(normalizeAdaptivePacing('strong')).toBe('strong');
+    expect(normalizeAdaptivePacing('extreme')).toBe('extreme');
     expect(normalizeAdaptivePacing('unknown')).toBe('normal');
   });
   it('starts an ordinary paused passage and pauses one that is playing', () => {

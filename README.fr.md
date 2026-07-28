@@ -149,6 +149,8 @@ Brave repose sur Chromium et
    les captures indépendamment de la taille des mots.
 10. Régler **Contexte visible** de `0 mot` à `12 mots` selon la quantité de
     texte souhaitée autour du mot actif.
+11. Choisir **Adaptation du rythme → Extrême** pour accentuer fortement les
+    pauses sur les passages complexes, les parenthèses et les paragraphes.
 Si une sélection très courte apparaît à plusieurs endroits du document,
 l'extension refuse de choisir arbitrairement une page. Sélectionnez alors une
 phrase un peu plus longue.

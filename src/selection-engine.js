@@ -9,7 +9,13 @@ const PARENTHESIZED_EQUATION_LABEL = new RegExp(`^\\(\\s*(${EQUATION_LABEL_CORE}
 const BRACKETED_EQUATION_LABEL = new RegExp(`^\\[\\s*(${EQUATION_LABEL_CORE})\\s*\\]$`, 'i');
 const BARE_EQUATION_LABEL = new RegExp(`^${EQUATION_LABEL_CORE}$`, 'i');
 const STRONG_MATH_SIGNAL = /[=≡+−–*/^_<>≈≠≤≥±×÷∝→↦∑∫∏√∞∂∇□\u0370-\u03ffℏħ]/u;
-export const ADAPTIVE_PACING_MODES = Object.freeze(['off', 'light', 'normal', 'strong']);
+export const ADAPTIVE_PACING_MODES = Object.freeze([
+  'off',
+  'light',
+  'normal',
+  'strong',
+  'extreme'
+]);
 export const DEFAULT_ADAPTIVE_PACING = 'normal';
 
 const PACING_PROFILES = Object.freeze({
@@ -56,6 +62,17 @@ const PACING_PROFILES = Object.freeze({
     sentencePause: 400,
     paragraphPause: 800,
     maximumFactor: 3.4
+  },
+  extreme: {
+    lengthStepMs: 60,
+    lengthMaximumMs: 900,
+    numberBonus: .4,
+    acronymBonus: .3,
+    clauseBonus: 1,
+    parenthesisPause: 320,
+    sentencePause: 600,
+    paragraphPause: 1200,
+    maximumFactor: 4.5
   }
 });
 

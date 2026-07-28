@@ -328,8 +328,8 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 3. Les bonus de longueur, de ponctuation, de nombres et d'acronymes se
    cumulent, avec une durée maximale pour éviter les pauses excessives.
 4. Les pauses des équations restent gérées séparément.
-5. Les réglages proposent quatre profils persistants :
-   `Désactivée`, `Légère`, `Normale` et `Forte`.
+5. Les réglages proposent cinq profils persistants :
+   `Désactivée`, `Légère`, `Normale`, `Forte` et `Extrême`.
 
 ## Contexte horizontal de la version 0.15.24
 
@@ -351,17 +351,17 @@ Les raisons techniques et la stratégie générale sont détaillées dans
    automatiquement depuis cette position si elle était déjà en cours.
 3. En profil normal, une fin de phrase ajoute désormais `300 ms` et une fin de
    paragraphe `600 ms`, indépendamment du nombre de mots par minute.
-4. Les profils léger et fort utilisent respectivement des pauses structurelles
-   plus courtes ou plus longues. Le profil désactivé conserve un rythme fixe.
+4. Les profils léger, fort et extrême utilisent des pauses structurelles
+   progressivement plus longues. Le profil désactivé conserve un rythme fixe.
 5. Les paragraphes sont repérés depuis l'espacement des lignes et les fins de
    ligne de la couche PDF. Les retours à la ligne ordinaires ne sont pas
    confondus avec des changements de paragraphe.
 6. Les limites de paragraphe servent aussi à la reprise par phrase lorsqu'un
    paragraphe ne se termine pas par un signe de ponctuation.
 7. Les parenthèses ajoutent une pause structurelle à leur ouverture et à leur
-   fermeture : `90 ms` en profil léger, `150 ms` en profil normal et `220 ms`
-   en profil fort. Une paire contenue dans le même élément cumule les deux
-   pauses ; le profil désactivé n'en ajoute aucune.
+   fermeture : `90 ms` en profil léger, `150 ms` en profil normal, `220 ms`
+   en profil fort et `320 ms` en profil extrême. Une paire contenue dans le
+   même élément cumule les deux pauses ; le profil désactivé n'en ajoute aucune.
 
 ## Mots longs et repère ORP des versions 0.15.26 et 0.15.27
 

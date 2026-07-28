@@ -147,6 +147,8 @@ Brave is based on Chromium and
    independently of the word size.
 10. Set **Visible context** from `0 words` to `12 words` depending on how much
     text should appear around the active word.
+11. Choose **Adaptive pacing → Extreme** to strongly increase pauses for
+    complex passages, parentheses, and paragraphs.
 If a very short selection appears in several places in the document, the
 extension refuses to choose a page arbitrarily. Select a slightly longer
 sentence in that case.

@@ -10,6 +10,10 @@ const source = readFileSync(
   new URL('../src/sidepanel.js', import.meta.url),
   'utf8'
 );
+const stylesheet = readFileSync(
+  new URL('../src/sidepanel.css', import.meta.url),
+  'utf8'
+);
 
 describe('adaptive pacing settings', () => {
   it('provides and persists every pacing mode', () => {
@@ -20,5 +24,9 @@ describe('adaptive pacing settings', () => {
     expect(source).toContain('adaptivePacing: state.adaptivePacing');
     expect(source).toContain('normalizeAdaptivePacing(state.adaptivePacing)');
     expect(source).toContain('readingDelay(item, state.wpm, state.adaptivePacing)');
+    expect(stylesheet).toContain('grid-template-columns:repeat(5,minmax(0,1fr))');
+    expect(stylesheet).toContain(
+      '.pacing-options label:last-child{grid-column:1/-1}'
+    );
   });
 });
