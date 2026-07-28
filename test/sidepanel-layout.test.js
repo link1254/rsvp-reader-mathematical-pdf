@@ -22,10 +22,11 @@ describe('sidepanel layout', () => {
     }
   );
 
-  it('places a readable equation number beside the captured image', () => {
-    expect(layoutFixes).toContain('.equation-label{position:static');
+  it('centers the captured expression and positions only its number to the right', () => {
+    expect(layoutFixes).toContain('.equation-snapshot{display:block;justify-self:center');
+    expect(layoutFixes).toContain('.equation-label{position:absolute;right:8px');
     expect(layoutFixes).toContain('font:700 calc(17px * var(--reader-scale))');
-    expect(layoutFixes).toContain('grid-template-columns:minmax(0,1fr) max-content');
+    expect(layoutFixes).not.toContain('grid-template-columns:minmax(0,1fr) max-content');
   });
 
   it('centers the three primary playback controls independently', () => {
