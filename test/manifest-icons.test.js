@@ -14,10 +14,15 @@ describe('extension icons', () => {
       const messages = JSON.parse(
         readFileSync(new URL(`../public/_locales/${locale}/messages.json`, import.meta.url), 'utf8')
       );
-      expect(messages.appName.message).toBe('RSVP Reader - Mathematical PDF');
+      expect(messages.appName.message).toBe('RSVP Reader Beta - Mathematical PDF');
       expect(messages.appDescription.message).toBeTruthy();
       expect(messages.actionTitle.message).toBeTruthy();
     }
+  });
+
+  it('identifies the test build as beta', () => {
+    expect(manifest.version).toBe('0.16.0');
+    expect(manifest.version_name).toBe('0.16.0-beta.1');
   });
 
   it('declares the project logo for the extension and toolbar action', () => {

@@ -1,9 +1,12 @@
-# RSVP Reader - Mathematical PDF
+# RSVP Reader Beta - Mathematical PDF
+
+Test build from the `dev/new-features` branch. The stable version remains
+available on the `main` branch.
 
 **English** | [Français](README.fr.md)
 
 <p align="center">
-  <img src="public/icons/icon-128.png" width="128" height="128" alt="RSVP Reader - Mathematical PDF logo">
+  <img src="public/icons/icon-128.png" width="128" height="128" alt="RSVP Reader Beta - Mathematical PDF logo">
 </p>
 
 An RSVP reading extension for scientific and mathematical PDF documents.
@@ -125,7 +128,7 @@ Brave is based on Chromium and
 1. Open a PDF with a text layer in the browser.
 2. Select the passage you want to read.
 3. Right-click the selection.
-4. Choose **Read selection with RSVP Reader**.
+4. Choose **Read selection with RSVP Reader Beta**.
 5. Wait for the local analysis to finish, then use:
    - `Space` to play or pause;
    - the left and right arrow keys to move one word at a time;

@@ -1,4 +1,4 @@
-# Reprise du projet RSVP Reader - Mathematical PDF
+# Reprise du projet RSVP Reader Beta - Mathematical PDF
 
 Dernière version préparée : **0.16.0** — 29 juillet 2026.
 
@@ -6,7 +6,7 @@ Dernière version préparée : **0.16.0** — 29 juillet 2026.
 
 Créer une extension Microsoft Edge de lecture RSVP pour les PDF scientifiques.
 L'utilisateur sélectionne un passage dans le lecteur PDF d'Edge, puis choisit
-**Lire la sélection avec RSVP Reader** dans le menu contextuel. Une fenêtre
+**Lire la sélection avec RSVP Reader Beta** dans le menu contextuel. Une fenêtre
 horizontale reste au-dessus du PDF et affiche le mot courant, son contexte et
 l'aperçu du passage.
 
@@ -143,7 +143,7 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 ## Documentation et renommage de la version 0.15.7
 
 1. Le projet et l'extension portent désormais le nom
-   **RSVP Reader - Mathematical PDF**.
+   **RSVP Reader Beta - Mathematical PDF**.
 2. Le slug GitHub prévu est `rsvp-reader-mathematical-pdf`.
 3. Le README documente l'installation sur Edge, Chrome et Brave, les limites
    Firefox, la vie privée, les contributions et les sources des composants.
@@ -459,7 +459,7 @@ Recharger la version 0.16.0 et effectuer les vérifications suivantes :
 
 ## Phrase à donner à Codex sur un nouvel ordinateur
 
-> Ouvre `PROJECT_HANDOFF.md` et le projet RSVP Reader - Mathematical PDF.
+> Ouvre `PROJECT_HANDOFF.md` et le projet RSVP Reader Beta - Mathematical PDF.
 > Reprends le développement à partir de la version 0.16.0. Commence par vérifier l'état des
 > fichiers et les tests, puis aide-moi à tester le comportement des équations
 > dans mon PDF de cours.
