@@ -11,7 +11,10 @@ const MIN_READER_SIZE = Object.freeze({
 const WINDOW_MARGIN = 40;
 const BASE_READER_VIEWPORT_HEIGHT = 255;
 const MAX_READER_CONTENT_SCALE = 1.6;
+const MIN_EQUATION_CONTENT_SCALE = .6;
+const MAX_EQUATION_CONTENT_SCALE = 2.4;
 const EQUATION_SNAPSHOT_HORIZONTAL_PADDING = 10;
+export const DEFAULT_EQUATION_IMAGE_SIZE = 100;
 
 function validDimension(value, fallback) {
   return Number.isFinite(value) && value > 0 ? Math.round(value) : fallback;
@@ -60,10 +63,33 @@ export function readerContentScale(viewportHeight, horizontal = true) {
   return Math.round(scale * 100) / 100;
 }
 
+export function normalizeEquationImageSize(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return DEFAULT_EQUATION_IMAGE_SIZE;
+  return Math.min(180, Math.max(60, Math.round(numericValue / 10) * 10));
+}
+
+export function equationContentScale(
+  readerScale,
+  imageSize = DEFAULT_EQUATION_IMAGE_SIZE
+) {
+  const responsiveScale = Number.isFinite(readerScale)
+    ? Math.max(1, readerScale)
+    : 1;
+  const scale = responsiveScale * normalizeEquationImageSize(imageSize) / 100;
+  return Math.round(Math.min(
+    MAX_EQUATION_CONTENT_SCALE,
+    Math.max(MIN_EQUATION_CONTENT_SCALE, scale)
+  ) * 100) / 100;
+}
+
 export function equationSnapshotWidth(naturalWidth, contentScale = 1) {
   if (!Number.isFinite(naturalWidth) || naturalWidth <= 0) return null;
   const scale = Number.isFinite(contentScale)
-    ? Math.min(MAX_READER_CONTENT_SCALE, Math.max(1, contentScale))
+    ? Math.min(
+        MAX_EQUATION_CONTENT_SCALE,
+        Math.max(MIN_EQUATION_CONTENT_SCALE, contentScale)
+      )
     : 1;
   return Math.round(
     (naturalWidth + EQUATION_SNAPSHOT_HORIZONTAL_PADDING) * scale

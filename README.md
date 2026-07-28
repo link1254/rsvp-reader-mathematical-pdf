@@ -143,6 +143,8 @@ Brave is based on Chromium and
 8. Under **Settings → Mathematics in the overview**, choose **Yellow labels**
    or **Expression previews**. A notation without an available capture keeps
    its yellow label.
+9. Adjust **Settings → Equation image size** to reduce or enlarge captures
+   independently of the word size.
 If a very short selection appears in several places in the document, the
 extension refuses to choose a page arbitrarily. Select a slightly longer
 sentence in that case.

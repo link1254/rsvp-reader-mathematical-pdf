@@ -443,6 +443,10 @@ Recharger la version 0.16.0 et effectuer les vérifications suivantes :
 - basculer entre **Français** et **English** et vérifier le menu contextuel ;
 - vérifier qu'un numéro comme `(1.2)` disparaît du texte et reste visible dans
   l'espace situé à droite de la capture d'équation.
+- agrandir la fenêtre et vérifier que la carte d'équation reste centrée tandis
+  que l'aperçu du passage utilise toute la hauteur inférieure disponible ;
+- tester **Taille des images d’équation** à `60 %`, `100 %` et `180 %`, avec
+  une expression courte puis une équation large.
 
 ## Phrase à donner à Codex sur un nouvel ordinateur
 

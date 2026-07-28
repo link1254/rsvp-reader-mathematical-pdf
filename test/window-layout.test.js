@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_EQUATION_IMAGE_SIZE,
   DEFAULT_READER_SIZE,
+  equationContentScale,
   equationSnapshotWidth,
+  normalizeEquationImageSize,
   readerContentScale,
   readerWindowLayout,
   readerWindowSize
@@ -82,7 +85,24 @@ describe('equationSnapshotWidth', () => {
 
   it('rejects invalid widths and clamps invalid scales', () => {
     expect(equationSnapshotWidth(0, 1.4)).toBeNull();
-    expect(equationSnapshotWidth(240, 3)).toBe(400);
+    expect(equationSnapshotWidth(240, 3)).toBe(600);
+    expect(equationSnapshotWidth(240, .2)).toBe(150);
     expect(equationSnapshotWidth(240, Number.NaN)).toBe(250);
+  });
+});
+
+describe('equation image size', () => {
+  it('normalizes the persisted percentage', () => {
+    expect(DEFAULT_EQUATION_IMAGE_SIZE).toBe(100);
+    expect(normalizeEquationImageSize('140')).toBe(140);
+    expect(normalizeEquationImageSize(53)).toBe(60);
+    expect(normalizeEquationImageSize(187)).toBe(180);
+    expect(normalizeEquationImageSize('invalid')).toBe(100);
+  });
+
+  it('combines the manual size with responsive window scaling', () => {
+    expect(equationContentScale(1, 60)).toBe(.6);
+    expect(equationContentScale(1.25, 120)).toBe(1.5);
+    expect(equationContentScale(1.6, 180)).toBe(2.4);
   });
 });

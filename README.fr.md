@@ -145,6 +145,8 @@ Brave repose sur Chromium et
 8. Dans **Réglages → Mathématiques dans l’aperçu**, choisir entre les
    **Libellés jaunes** et les **Miniatures des expressions**. Une notation sans
    capture disponible conserve son libellé jaune.
+9. Ajuster **Réglages → Taille des images d’équation** pour réduire ou agrandir
+   les captures indépendamment de la taille des mots.
 Si une sélection très courte apparaît à plusieurs endroits du document,
 l'extension refuse de choisir arbitrairement une page. Sélectionnez alors une
 phrase un peu plus longue.

@@ -21,7 +21,9 @@ import {
 } from './reader-themes.js';
 import { normalizeOverviewMathMode } from './overview-display.js';
 import {
+  equationContentScale,
   equationSnapshotWidth,
+  normalizeEquationImageSize,
   readerContentScale
 } from './window-layout.js';
 import { initializeFeedback } from './feedback-ui.js';
@@ -39,11 +41,11 @@ const extensionStorage = api?.storage?.local ?? {
   set: async () => {}
 };
 const $ = selector => document.querySelector(selector);
-const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', fontSize: 62, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
+const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
 let selectionLoadId = 0;
 let selectionAbortController = null;
 let feedbackController = null;
-let currentReaderScale = 1;
+let currentEquationScale = 1;
 
 function restoreWaitingUi() {
   $('#waiting h1').textContent = t('selectPassage');
@@ -213,7 +215,7 @@ function applyLanguage() {
   feedbackController?.refreshLanguage?.();
 }
 
-function resizeEquationSnapshot(scale = currentReaderScale) {
+function resizeEquationSnapshot(scale = currentEquationScale) {
   const snapshot = $('#equationSnapshot');
   const width = equationSnapshotWidth(snapshot.naturalWidth, scale);
   if (width) snapshot.style.width = `${width}px`;
@@ -223,9 +225,11 @@ function applyResponsiveSizing(isEquation = state.items[state.index]?.type === '
   const horizontal = matchMedia('(min-width: 600px)').matches;
   const viewport = $('.viewport');
   const scale = readerContentScale(viewport.clientHeight, horizontal);
-  currentReaderScale = scale;
+  const equationScale = equationContentScale(scale, state.equationImageSize);
+  currentEquationScale = equationScale;
   document.documentElement.style.setProperty('--reader-scale', String(scale));
-  resizeEquationSnapshot(scale);
+  document.documentElement.style.setProperty('--equation-scale', String(equationScale));
+  resizeEquationSnapshot(equationScale);
   const baseSize = isEquation ? Math.max(38, state.fontSize * .7) : state.fontSize;
   const current = $('#current');
   const preferredSize = Math.round(baseSize * scale);
@@ -459,6 +463,12 @@ document.querySelectorAll('[name="adaptivePacing"]').forEach(radio => radio.onch
   save();
 });
 $('#fontSize').oninput = event => { state.fontSize = Number(event.target.value); render(); save(); };
+$('#equationImageSize').oninput = event => {
+  state.equationImageSize = normalizeEquationImageSize(event.target.value);
+  $('#equationImageSizeValue').textContent = `${state.equationImageSize} %`;
+  applyResponsiveSizing();
+  save();
+};
 $('#contextSize').onchange = event => { state.contextSize = Number(event.target.value); render(); save(); };
 $('#horizontalContext').onchange = event => {
   state.horizontalContext = event.target.checked;
@@ -515,7 +525,7 @@ window.addEventListener('resize', () => {
 async function save() {
   await extensionStorage.set({
     uiLanguage: state.uiLanguage,
-    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, overviewMathMode: state.overviewMathMode, fontSize: state.fontSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
+    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, overviewMathMode: state.overviewMathMode, fontSize: state.fontSize, equationImageSize: state.equationImageSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
   });
 }
 async function restore() {
@@ -532,12 +542,13 @@ async function restore() {
   state.adaptivePacing = normalizeAdaptivePacing(state.adaptivePacing);
   state.horizontalContext = state.horizontalContext === true;
   state.overviewMathMode = normalizeOverviewMathMode(state.overviewMathMode);
+  state.equationImageSize = normalizeEquationImageSize(state.equationImageSize);
   state.readerFont = normalizeReaderFont(state.readerFont);
   state.readerTheme = normalizeReaderTheme(state.readerTheme);
   applyReaderFont(document.documentElement, state.readerFont);
   applyReaderTheme(document.documentElement, state.readerTheme);
   applyContextLayout();
-  $('#wpm').value = state.wpm; $('#wpmValue').textContent = state.wpm; $('#fontSize').value = state.fontSize; $('#contextSize').value = state.contextSize; $('#horizontalContext').checked = state.horizontalContext; $('#overviewMathMode').value = state.overviewMathMode; $('#readerFont').value = state.readerFont; $('#readerTheme').value = state.readerTheme; $('#uiLanguage').value = state.uiLanguage;
+  $('#wpm').value = state.wpm; $('#wpmValue').textContent = state.wpm; $('#fontSize').value = state.fontSize; $('#equationImageSize').value = state.equationImageSize; $('#equationImageSizeValue').textContent = `${state.equationImageSize} %`; $('#contextSize').value = state.contextSize; $('#horizontalContext').checked = state.horizontalContext; $('#overviewMathMode').value = state.overviewMathMode; $('#readerFont').value = state.readerFont; $('#readerTheme').value = state.readerTheme; $('#uiLanguage').value = state.uiLanguage;
   const radio = $(`[name="equationMode"][value="${state.equationMode}"]`); if (radio) radio.checked = true;
   const pacingRadio = $(`[name="adaptivePacing"][value="${state.adaptivePacing}"]`); if (pacingRadio) pacingRadio.checked = true;
 }
