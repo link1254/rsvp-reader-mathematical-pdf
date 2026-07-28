@@ -1,0 +1,76 @@
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('../node_modules/@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('../node_modules/@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('../node_modules/@fontsource/opendyslexic/files/opendyslexic-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('../node_modules/@fontsource/opendyslexic/files/opendyslexic-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lexend Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../node_modules/@fontsource-variable/lexend/files/lexend-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'KaTeX_Main';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('../node_modules/katex/dist/fonts/KaTeX_Main-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'KaTeX_Main';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('../node_modules/katex/dist/fonts/KaTeX_Main-Bold.woff2') format('woff2');
+}
+
+:root {
+  --reader-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.viewport,
+.paragraph-text,
+.font-preview {
+  font-family: var(--reader-font);
+}
+
+.font-preview {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff08;
+  color: #fff;
+  font-size: 16px;
+  line-height: 1.4;
+}

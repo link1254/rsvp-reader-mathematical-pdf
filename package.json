@@ -1,0 +1,35 @@
+{
+  "name": "rsvp-reader-mathematical-pdf",
+  "version": "0.16.0",
+  "description": "Local RSVP reader for scientific PDFs with faithful mathematical notation captures.",
+  "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/link1254/rsvp-reader-mathematical-pdf.git"
+  },
+  "bugs": {
+    "url": "https://github.com/link1254/rsvp-reader-mathematical-pdf/issues"
+  },
+  "homepage": "https://github.com/link1254/rsvp-reader-mathematical-pdf#readme",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "license:check": "node scripts/verify-licenses.mjs",
+    "check": "npm run test && npm run build && npm run license:check"
+  },
+  "dependencies": {
+    "@fontsource-variable/lexend": "5.3.0",
+    "@fontsource/atkinson-hyperlegible": "5.3.0",
+    "@fontsource/opendyslexic": "5.3.0",
+    "katex": "^0.16.22",
+    "onnxruntime-web": "1.22.0",
+    "pdfjs-dist": "^5.4.149"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
+  }
+}

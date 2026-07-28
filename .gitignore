@@ -1,0 +1,11 @@
+node_modules/
+.pnpm-store/
+dist/
+.vite/
+coverage/
+*.zip
+tmp/
+.env.local
+.env.*.local
+feedback-relay/.dev.vars
+feedback-relay/.env

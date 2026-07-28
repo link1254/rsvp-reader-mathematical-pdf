@@ -1,0 +1,17 @@
+{
+  "name": "rsvp-reader-feedback-relay",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-07-27",
+  "workers_dev": true,
+  "vars": {
+    "GITHUB_OWNER": "link1254",
+    "GITHUB_REPOSITORY": "rsvp-reader-private-reports",
+    "GITHUB_BRANCH": "main",
+    "ALLOWED_ORIGINS": ""
+  },
+  "secrets": {
+    "required": [
+      "GITHUB_TOKEN"
+    ]
+  }
+}

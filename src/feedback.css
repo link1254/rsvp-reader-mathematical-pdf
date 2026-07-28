@@ -1,0 +1,27 @@
+.header-actions{display:flex;align-items:center;gap:6px}
+header .feedback-button{border:1px solid var(--line);border-radius:6px;background:var(--card);color:#eef2ff;padding:6px 9px;font-size:11px}
+.feedback-dialog{width:min(680px,calc(100% - 30px));max-height:calc(100vh - 30px);overflow:auto}
+.feedback-dialog form{gap:10px}
+.feedback-dialog h2,.feedback-dialog p{margin:0}
+.feedback-dialog>form>p{color:var(--muted);font-size:11px;line-height:1.5}
+.feedback-dialog textarea{min-height:70px;resize:vertical;padding:9px;border:1px solid var(--line);border-radius:6px;background:#ffffff10;color:inherit;line-height:1.45}
+.feedback-options{display:grid;gap:8px;border:0;padding:0;margin:0}
+.feedback-options label{display:flex;grid-template-columns:none;align-items:flex-start;gap:8px;color:#eef2ff}
+.feedback-options input{margin-top:2px;accent-color:var(--brand)}
+.feedback-options input:disabled+span{color:var(--muted)}
+.feedback-preview{display:grid;gap:8px}
+.feedback-preview>span{color:var(--muted);font-size:11px;font-weight:700}
+.feedback-preview pre{max-height:110px;overflow:auto;margin:0;padding:9px;border:1px solid var(--line);background:#0c1220;color:#dbe3ff;font:10px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.feedback-page-preview{display:block;max-width:100%;max-height:180px;object-fit:contain;border:1px solid var(--line);background:#fff}
+.feedback-status{min-height:16px;color:var(--muted);font-size:11px}
+.feedback-status[data-kind="error"]{color:#ff9ca3}
+.feedback-status[data-kind="warning"]{color:#ffd47a}
+.feedback-status[data-kind="success"]{color:#9fe0b1}
+.feedback-actions{display:flex;justify-content:flex-end;gap:8px}
+.feedback-actions button{padding:8px 11px}
+.feedback-actions #feedbackSend{background:var(--brand);color:#111827;font-weight:800}
+.feedback-actions #feedbackSend:disabled{opacity:.55;cursor:not-allowed}
+[data-reader-theme="minimal"] header .feedback-button{border-radius:2px;background:#202328}
+[data-reader-theme="minimal"] .feedback-dialog textarea{border-radius:2px;background:#24272c}
+[data-reader-theme="minimal"] .feedback-preview pre{background:#101215}
+@media (max-width:599px){header .feedback-button{padding:6px}.feedback-actions{display:grid;grid-template-columns:1fr 1fr}.feedback-actions #feedbackSend{grid-column:1/-1}}
