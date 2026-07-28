@@ -20,6 +20,13 @@ describe('horizontal reading context', () => {
     expect(source).toContain('horizontalContext: false');
   });
 
+  it('allows zero or one surrounding word', () => {
+    expect(html).toContain('<option value="0"');
+    expect(html).toContain('<option value="1"');
+    expect(html).toContain('data-i18n="contextWord">1 mot</option>');
+    expect(source).toContain('state.index + 1 + state.contextSize');
+  });
+
   it('persists and restores the selected layout', () => {
     expect(source).toContain('horizontalContext: state.horizontalContext');
     expect(source).toContain("$('#horizontalContext').checked = state.horizontalContext");
