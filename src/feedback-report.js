@@ -30,22 +30,25 @@ function documentName(sourceUrl) {
 }
 
 export function buildFeedbackReport(input, limits = {}) {
+  const reportLanguage = input.locale === 'en' ? 'en' : 'fr';
+  const reportText = createTranslator(reportLanguage);
   const maxDescriptionCharacters = limits.maxDescriptionCharacters || 1500;
   const maxExcerptCharacters = limits.maxExcerptCharacters || 2500;
   const maxPageImageBytes = limits.maxPageImageBytes || 8 * 1024 * 1024;
   const description = clipped(input.description, maxDescriptionCharacters);
-  if (!description) throw new Error('Décrivez le problème avant de préparer le rapport.');
+  if (!description) throw new Error(reportText('describeProblemError'));
 
   const category = FEEDBACK_CATEGORIES.includes(input.category)
     ? input.category
     : 'other';
   const pageImage = input.includePageImage ? input.pageCapture || null : null;
   if (pageImage && imageByteSize(pageImage) > maxPageImageBytes) {
-    throw new Error('L’image de la page est trop volumineuse pour être jointe.');
+    throw new Error(reportText('pageImageTooLarge'));
   }
 
   const report = {
     schemaVersion: 1,
+    locale: reportLanguage,
     reportId: input.reportId || globalThis.crypto?.randomUUID?.() || `feedback-${Date.now()}`,
     createdAt: input.createdAt || new Date().toISOString(),
     category,
@@ -71,24 +74,26 @@ export function buildFeedbackReport(input, limits = {}) {
 }
 
 export function formatFeedbackReport(report) {
+  const reportText = createTranslator(report.locale === 'en' ? 'en' : 'fr');
   const diagnostics = report.diagnostics || {};
+  const unknown = reportText('unknown');
   const lines = [
-    `# RSVP Reader feedback: ${report.category}`,
+    `# ${reportText('feedbackTitle', { category: report.category })}`,
     '',
     report.description,
     '',
-    '## Diagnostics',
-    `- Version: ${diagnostics.extensionVersion || 'unknown'}`,
-    `- Page PDF: ${diagnostics.pageNumber ?? 'unknown'}`,
-    `- Position: ${diagnostics.readingPosition ?? 'unknown'} / ${diagnostics.readingItems ?? 'unknown'}`,
-    `- Équations: ${diagnostics.equationCount ?? 'unknown'} (${diagnostics.unresolvedEquationCount ?? 'unknown'} non résolues)`,
-    `- Document: ${diagnostics.documentName || 'non transmis'}`,
-    `- Navigateur: ${diagnostics.browser || 'unknown'}`
+    `## ${reportText('diagnostics')}`,
+    `- ${reportText('version')}: ${diagnostics.extensionVersion || unknown}`,
+    `- ${reportText('pdfPage')}: ${diagnostics.pageNumber ?? unknown}`,
+    `- ${reportText('position')}: ${diagnostics.readingPosition ?? unknown} / ${diagnostics.readingItems ?? unknown}`,
+    `- ${reportText('equations')}: ${diagnostics.equationCount ?? unknown} (${diagnostics.unresolvedEquationCount ?? unknown} ${reportText('unresolved')})`,
+    `- ${reportText('document')}: ${diagnostics.documentName || reportText('notProvided')}`,
+    `- ${reportText('browser')}: ${diagnostics.browser || unknown}`
   ];
   if (report.selectionExcerpt) {
-    lines.push('', '## Extrait sélectionné', report.selectionExcerpt);
+    lines.push('', `## ${reportText('selectedExcerpt')}`, report.selectionExcerpt);
   }
-  lines.push('', `Image de la page jointe: ${report.pageImage ? 'oui' : 'non'}`);
+  lines.push('', `${reportText('pageImageAttached')}: ${reportText(report.pageImage ? 'yes' : 'no')}`);
   return lines.join('\n');
 }
 
@@ -97,7 +102,7 @@ export function feedbackEndpoint(endpoint) {
   const url = new URL(endpoint);
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
   if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) {
-    throw new Error('Le relais de feedback doit utiliser HTTPS.');
+    throw new Error(t('feedbackHttpsRequired'));
   }
   return url.href;
 }
@@ -106,7 +111,7 @@ export function publicIssueEndpoint(endpoint) {
   const url = new URL(endpoint);
   const validPath = /^\/[^/]+\/[^/]+\/issues\/new\/?$/.test(url.pathname);
   if (url.protocol !== 'https:' || url.hostname !== 'github.com' || !validPath) {
-    throw new Error('L’adresse de signalement public doit être une page de nouvelle Issue GitHub.');
+    throw new Error(t('publicIssueAddressInvalid'));
   }
   return url.href;
 }
@@ -123,7 +128,7 @@ export function publicFeedbackIssueUrl(report, endpoint) {
 
 export async function submitFeedbackReport(report, endpoint, fetchImpl = fetch) {
   const url = feedbackEndpoint(endpoint);
-  if (!url) throw new Error('L’envoi privé n’est pas encore configuré.');
+  if (!url) throw new Error(t('privateSendingNotConfigured'));
   const response = await fetchImpl(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -132,7 +137,8 @@ export async function submitFeedbackReport(report, endpoint, fetchImpl = fetch) 
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
-    throw new Error(payload?.error || `Le relais a refusé le rapport (${response.status}).`);
+    throw new Error(payload?.error || t('relayRejected', { status: response.status }));
   }
   return response.json().catch(() => ({}));
 }
+import { createTranslator, t } from './i18n.js';

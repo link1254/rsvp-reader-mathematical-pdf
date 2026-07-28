@@ -1,28 +1,196 @@
-<!doctype html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RSVP Reader - Mathematical PDF</title><link rel="stylesheet" href="sidepanel.css"><link rel="stylesheet" href="reader-fonts.css"><link rel="stylesheet" href="feedback.css"></head>
-<body><link rel="stylesheet" href="horizontal.css"><link rel="stylesheet" href="fixes.css">
-  <header><div class="brand"><span>R▸</span><div><strong>RSVP Reader</strong><small>PDF mathématique</small></div></div><div class="header-actions"><button id="feedbackButton" class="feedback-button hidden" type="button">Signaler</button><button id="settingsButton" title="Réglages">⚙</button></div></header>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RSVP Reader - Mathematical PDF</title>
+  <link rel="stylesheet" href="sidepanel.css">
+  <link rel="stylesheet" href="reader-fonts.css">
+  <link rel="stylesheet" href="feedback.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span>R▸</span>
+      <div><strong>RSVP Reader</strong><small data-i18n="appSubtitle">PDF mathématique</small></div>
+    </div>
+    <div class="header-actions">
+      <button id="feedbackButton" class="feedback-button hidden" type="button" data-i18n="reportProblem">Signaler</button>
+      <button id="settingsButton" data-i18n-title="settings" title="Réglages">⚙</button>
+    </div>
+  </header>
   <main>
-    <section id="waiting" class="waiting"><div class="select-icon">T</div><h1>Sélectionnez un passage</h1><p>Dans votre PDF, sélectionnez le texte à lire puis faites un clic droit :</p><div id="loadingProgress" class="loading-progress hidden"><div><span>Progression</span><strong id="loadingPercent">En cours</strong></div><progress id="loadingBar" max="100" aria-label="Progression du chargement"></progress></div><strong id="waitingAction">Lire la sélection avec RSVP Reader</strong><p class="quiet">Le PDF reste ouvert à la même page, avec vos annotations.</p></section>
+    <section id="waiting" class="waiting">
+      <div class="select-icon">T</div>
+      <h1 data-i18n="selectPassage">Sélectionnez un passage</h1>
+      <p data-i18n="selectPassageHelp">Dans votre PDF, sélectionnez le texte à lire puis faites un clic droit :</p>
+      <div id="loadingProgress" class="loading-progress hidden">
+        <div>
+          <span data-i18n="progress">Progression</span>
+          <strong id="loadingPercent" data-i18n="inProgress">En cours</strong>
+        </div>
+        <progress id="loadingBar" max="100" data-i18n-aria-label="loadingProgress" aria-label="Progression du chargement"></progress>
+      </div>
+      <strong id="waitingAction" data-i18n="readSelection">Lire la sélection avec RSVP Reader</strong>
+      <p class="quiet" data-i18n="pdfRemainsOpen">Le PDF reste ouvert à la même page, avec vos annotations.</p>
+    </section>
     <section id="reader" class="reader hidden">
-      <div class="source"><span id="source">Sélection PDF</span><div><button id="captureButton" class="capture-button hidden" title="Choisir visuellement l’équation">▣ Équation</button><button id="clear" title="Fermer la sélection">×</button></div></div>
+      <div class="source">
+        <span id="source" data-i18n="pdfSelection">Sélection PDF</span>
+        <div>
+          <button id="captureButton" class="capture-button hidden" data-i18n-title="chooseEquation" title="Choisir visuellement l’équation">▣ <span data-i18n="captureEquation">Équation</span></button>
+          <button id="clear" data-i18n-title="closeSelection" title="Fermer la sélection">×</button>
+        </div>
+      </div>
       <div class="viewport">
-        <div id="betaBadge" class="beta-badge hidden">BÊTA · CONTEXTE SYNCHRONISÉ</div>
+        <div id="betaBadge" class="beta-badge hidden" data-i18n="betaBadge">BÊTA · CONTEXTE SYNCHRONISÉ</div>
         <div id="previous" class="context previous"></div>
         <div id="current" class="current"></div>
         <div id="next" class="context next"></div>
         <div id="sentenceContext" class="sentence-context"></div>
         <div class="focus-line"></div>
       </div>
-      <div id="equationCard" class="equation-card hidden"><span>EXPRESSION MATHÉMATIQUE</span><div id="equationVisual" class="equation-visual hidden"><img id="equationSnapshot" class="equation-snapshot" alt="Équation telle qu’elle apparaît dans le PDF"><span id="equationLabel" class="equation-label hidden"></span></div><div id="equation"></div><small id="equationSource" class="equation-source"></small><footer class="equation-actions"><button id="copyEquationImage" class="copy-equation-image hidden" type="button" title="Copier l’image de l’équation">Copier l’image</button><button id="manualCaptureEquation" class="hidden" type="button">Encadrer la formule</button><button id="continueEquation" type="button">J’ai compris — continuer</button></footer></div>
-      <div class="progress"><div><span id="position">1 / 1</span><span id="percent">0 %</span></div><input id="seek" type="range" min="0" max="0" value="0"></div>
-      <div class="transport"><button id="replaySentence" type="button" title="Recommencer la phrase ; rappuyer au début pour revenir à la précédente" aria-label="Recommencer la phrase">↶</button><button id="back">−5</button><button id="play">▶</button><button id="forward">+5</button></div>
-      <div class="speed"><label for="wpm">Vitesse</label><strong><span id="wpmValue">300</span> mpm</strong><input id="wpm" type="range" min="80" max="800" step="10" value="300"></div>
-      <div class="equation-mode"><span>Lors d’une équation</span><label><input type="radio" name="equationMode" value="manual" checked> Attendre ma validation</label><label><input type="radio" name="equationMode" value="auto"> Continuer automatiquement</label></div>
-      <div class="paragraph-overview"><div class="overview-title"><span>Aperçu du passage</span><small id="overviewPosition">Position actuelle</small></div><div id="paragraphText" class="paragraph-text"></div></div>
+      <div id="equationCard" class="equation-card hidden">
+        <span data-i18n="mathematicalExpression">EXPRESSION MATHÉMATIQUE</span>
+        <div id="equationVisual" class="equation-visual hidden">
+          <img id="equationSnapshot" class="equation-snapshot" data-i18n-alt="equationImageAlt" alt="Équation telle qu’elle apparaît dans le PDF">
+          <span id="equationLabel" class="equation-label hidden"></span>
+        </div>
+        <div id="equation"></div>
+        <small id="equationSource" class="equation-source"></small>
+        <footer class="equation-actions">
+          <button id="copyEquationImage" class="copy-equation-image hidden" type="button" data-i18n="copyImage" data-i18n-title="copyEquationImage" title="Copier l’image de l’équation">Copier l’image</button>
+          <button id="manualCaptureEquation" class="hidden" type="button" data-i18n="frameFormula">Encadrer la formule</button>
+          <button id="continueEquation" type="button" data-i18n="understoodContinue">J’ai compris — continuer</button>
+        </footer>
+      </div>
+      <div class="progress">
+        <div><span id="position">1 / 1</span><span id="percent">0 %</span></div>
+        <input id="seek" type="range" min="0" max="0" value="0">
+      </div>
+      <div class="transport">
+        <button id="replaySentence" type="button" data-i18n-title="replaySentence" data-i18n-aria-label="replaySentence" title="Recommencer la phrase" aria-label="Recommencer la phrase">↶</button>
+        <button id="back">−5</button>
+        <button id="play">▶</button>
+        <button id="forward">+5</button>
+      </div>
+      <div class="speed">
+        <label for="wpm" data-i18n="speed">Vitesse</label>
+        <strong><span id="wpmValue">300</span> <span data-i18n="wordsPerMinuteAbbreviation">mpm</span></strong>
+        <input id="wpm" type="range" min="80" max="800" step="10" value="300">
+      </div>
+      <div class="equation-mode">
+        <span data-i18n="equationBehavior">Lors d’une équation</span>
+        <label><input type="radio" name="equationMode" value="manual" checked> <span data-i18n="waitForConfirmation">Attendre ma validation</span></label>
+        <label><input type="radio" name="equationMode" value="auto"> <span data-i18n="continueAutomatically">Continuer automatiquement</span></label>
+      </div>
+      <div class="paragraph-overview">
+        <div class="overview-title">
+          <span data-i18n="passageOverview">Aperçu du passage</span>
+          <small id="overviewPosition" data-i18n="currentPosition">Position actuelle</small>
+        </div>
+        <div id="paragraphText" class="paragraph-text"></div>
+      </div>
     </section>
   </main>
-    <dialog id="settings"><form method="dialog"><h2>Affichage</h2><label>Thème de l’interface<select id="readerTheme"><option value="classic" selected>Classique</option><option value="minimal">Minimal</option></select></label><label>Police de lecture<select id="readerFont"><option value="system" selected>Système (Segoe UI)</option><option value="atkinson">Atkinson Hyperlegible</option><option value="opendyslexic">OpenDyslexic</option><option value="lexend">Lexend</option><option value="latex">Style LaTeX (KaTeX Main)</option></select></label><p class="font-preview">Aperçu : énergie, matière et équations</p><label>Taille du mot<input id="fontSize" type="range" min="36" max="90" value="62"></label><label>Contexte visible<select id="contextSize"><option value="2">2 mots</option><option value="3" selected>3 mots</option><option value="5">5 mots</option><option value="8">8 mots</option><option value="12">12 mots</option></select></label><label id="horizontalContextSetting" class="checkbox-setting"><input id="horizontalContext" type="checkbox"><span>Contexte sur une ligne</span></label><section class="beta-setting"><div><span>Fonctionnalités bêta</span><strong id="betaSettingStatus">Version stable</strong></div><label class="checkbox-setting"><input id="betaFeatures" type="checkbox" role="switch"><span>Tester les fonctionnalités bêta</span></label><small>Contexte synchronisé</small></section><fieldset class="pacing-setting"><legend>Adaptation du rythme</legend><div class="pacing-options"><label><input type="radio" name="adaptivePacing" value="off"><span>Désactivée</span></label><label><input type="radio" name="adaptivePacing" value="light"><span>Légère</span></label><label><input type="radio" name="adaptivePacing" value="normal" checked><span>Normale</span></label><label><input type="radio" name="adaptivePacing" value="strong"><span>Forte</span></label></div></fieldset><button value="default">Fermer</button></form></dialog>
-  <dialog id="cropDialog" class="crop-dialog"><div><h2>Encadrer l’équation</h2><p>Faites glisser un rectangle autour de la formule, puis validez.</p><div class="crop-stage"><canvas id="cropCanvas"></canvas><div id="cropSelection"></div></div><footer><button id="cancelCrop">Annuler</button><button id="applyCrop" disabled>Afficher cette équation</button></footer></div></dialog>
-  <dialog id="feedbackDialog" class="feedback-dialog"><form id="feedbackForm"><h2>Signaler un problème</h2><p id="feedbackIntro">Vérifiez les informations ci-dessous avant de continuer.</p><label>Type de problème<select id="feedbackCategory"><option value="equation">Équation ou notation</option><option value="selection">Mauvaise sélection ou mauvaise page</option><option value="playback">Lecture ou commandes</option><option value="interface">Interface</option><option value="other">Autre</option></select></label><label>Description<textarea id="feedbackDescription" maxlength="1500" required placeholder="Que s’est-il passé ?"></textarea></label><fieldset class="feedback-options"><label><input id="feedbackIncludeExcerpt" type="checkbox"><span id="feedbackIncludeExcerptText">Inclure l’extrait sélectionné</span></label><label id="feedbackIncludePageLabel"><input id="feedbackIncludePage" type="checkbox"><span>Inclure l’image complète de la page PDF</span></label></fieldset><div class="feedback-preview"><span>Aperçu du rapport</span><pre id="feedbackPreview"></pre><img id="feedbackPagePreview" class="feedback-page-preview hidden" alt="Page PDF qui sera jointe au rapport"></div><p id="feedbackStatus" class="feedback-status" role="status"></p><footer class="feedback-actions"><button id="feedbackCancel" type="button">Annuler</button><button id="feedbackCopy" type="button">Copier le rapport</button><button id="feedbackSend" type="submit">Continuer</button></footer></form></dialog>
+  <dialog id="settings">
+    <form method="dialog">
+      <h2 data-i18n="display">Affichage</h2>
+      <label><span data-i18n="interfaceLanguage">Langue de l’interface</span>
+        <select id="uiLanguage">
+          <option value="auto" data-i18n="languageAuto">Automatique (navigateur)</option>
+          <option value="fr" data-i18n="french">Français</option>
+          <option value="en" data-i18n="english">English</option>
+        </select>
+      </label>
+      <label><span data-i18n="interfaceTheme">Thème de l’interface</span>
+        <select id="readerTheme">
+          <option value="classic" selected data-i18n="classic">Classique</option>
+          <option value="minimal" data-i18n="minimal">Minimal</option>
+        </select>
+      </label>
+      <label><span data-i18n="readingFont">Police de lecture</span>
+        <select id="readerFont">
+          <option value="system" selected data-i18n="systemFont">Système (Segoe UI)</option>
+          <option value="atkinson">Atkinson Hyperlegible</option>
+          <option value="opendyslexic">OpenDyslexic</option>
+          <option value="lexend">Lexend</option>
+          <option value="latex" data-i18n="latexStyle">Style LaTeX (KaTeX Main)</option>
+        </select>
+      </label>
+      <p class="font-preview" data-i18n="fontPreview">Aperçu : énergie, matière et équations</p>
+      <label><span data-i18n="wordSize">Taille du mot</span><input id="fontSize" type="range" min="36" max="90" value="62"></label>
+      <label><span data-i18n="visibleContext">Contexte visible</span>
+        <select id="contextSize">
+          <option value="2" data-i18n="contextWords" data-i18n-count="2">2 mots</option>
+          <option value="3" selected data-i18n="contextWords" data-i18n-count="3">3 mots</option>
+          <option value="5" data-i18n="contextWords" data-i18n-count="5">5 mots</option>
+          <option value="8" data-i18n="contextWords" data-i18n-count="8">8 mots</option>
+          <option value="12" data-i18n="contextWords" data-i18n-count="12">12 mots</option>
+        </select>
+      </label>
+      <label id="horizontalContextSetting" class="checkbox-setting">
+        <input id="horizontalContext" type="checkbox"><span data-i18n="oneLineContext">Contexte sur une ligne</span>
+      </label>
+      <section class="beta-setting">
+        <div><span data-i18n="betaFeatures">Fonctionnalités bêta</span><strong id="betaSettingStatus" data-i18n="stableVersion">Version stable</strong></div>
+        <label class="checkbox-setting"><input id="betaFeatures" type="checkbox" role="switch"><span data-i18n="tryBetaFeatures">Tester les fonctionnalités bêta</span></label>
+        <small data-i18n="synchronizedContext">Contexte synchronisé</small>
+      </section>
+      <fieldset class="pacing-setting">
+        <legend data-i18n="adaptivePacing">Adaptation du rythme</legend>
+        <div class="pacing-options">
+          <label><input type="radio" name="adaptivePacing" value="off"><span data-i18n="disabled">Désactivée</span></label>
+          <label><input type="radio" name="adaptivePacing" value="light"><span data-i18n="light">Légère</span></label>
+          <label><input type="radio" name="adaptivePacing" value="normal" checked><span data-i18n="normal">Normale</span></label>
+          <label><input type="radio" name="adaptivePacing" value="strong"><span data-i18n="strong">Forte</span></label>
+        </div>
+      </fieldset>
+      <button value="default" data-i18n="close">Fermer</button>
+    </form>
+  </dialog>
+  <dialog id="cropDialog" class="crop-dialog">
+    <div>
+      <h2 data-i18n="cropEquation">Encadrer l’équation</h2>
+      <p data-i18n="cropEquationHelp">Faites glisser un rectangle autour de la formule, puis validez.</p>
+      <div class="crop-stage"><canvas id="cropCanvas"></canvas><div id="cropSelection"></div></div>
+      <footer>
+        <button id="cancelCrop" data-i18n="cancel">Annuler</button>
+        <button id="applyCrop" disabled data-i18n="showEquation">Afficher cette équation</button>
+      </footer>
+    </div>
+  </dialog>
+  <dialog id="feedbackDialog" class="feedback-dialog">
+    <form id="feedbackForm">
+      <h2 data-i18n="reportProblemTitle">Signaler un problème</h2>
+      <p id="feedbackIntro" data-i18n="feedbackReview">Vérifiez les informations ci-dessous avant de continuer.</p>
+      <label><span data-i18n="problemType">Type de problème</span>
+        <select id="feedbackCategory">
+          <option value="equation" data-i18n="feedbackEquation">Équation ou notation</option>
+          <option value="selection" data-i18n="feedbackSelection">Mauvaise sélection ou mauvaise page</option>
+          <option value="playback" data-i18n="feedbackPlayback">Lecture ou commandes</option>
+          <option value="interface" data-i18n="feedbackInterface">Interface</option>
+          <option value="other" data-i18n="feedbackOther">Autre</option>
+        </select>
+      </label>
+      <label><span data-i18n="description">Description</span><textarea id="feedbackDescription" maxlength="1500" required data-i18n-placeholder="feedbackPlaceholder" placeholder="Que s’est-il passé ?"></textarea></label>
+      <fieldset class="feedback-options">
+        <label><input id="feedbackIncludeExcerpt" type="checkbox"><span id="feedbackIncludeExcerptText" data-i18n="includeExcerpt">Inclure l’extrait sélectionné</span></label>
+        <label id="feedbackIncludePageLabel"><input id="feedbackIncludePage" type="checkbox"><span data-i18n="includePageImage">Inclure l’image complète de la page PDF</span></label>
+      </fieldset>
+      <div class="feedback-preview">
+        <span data-i18n="reportPreview">Aperçu du rapport</span>
+        <pre id="feedbackPreview"></pre>
+        <img id="feedbackPagePreview" class="feedback-page-preview hidden" data-i18n-alt="reportPageAlt" alt="Page PDF qui sera jointe au rapport">
+      </div>
+      <p id="feedbackStatus" class="feedback-status" role="status"></p>
+      <footer class="feedback-actions">
+        <button id="feedbackCancel" type="button" data-i18n="cancel">Annuler</button>
+        <button id="feedbackCopy" type="button" data-i18n="copyReport">Copier le rapport</button>
+        <button id="feedbackSend" type="submit" data-i18n="continue">Continuer</button>
+      </footer>
+    </form>
+  </dialog>
   <script type="module" src="sidepanel.js"></script>
-</body></html>
+</body>
+</html>

@@ -1,4 +1,13 @@
+import {
+  applyDocumentTranslations,
+  normalizeUiLanguagePreference,
+  setUiLanguage
+} from './i18n.js';
+
 const api = globalThis.browser ?? globalThis.chrome;
+const { uiLanguage = 'auto' } = await api.storage.local.get('uiLanguage');
+setUiLanguage(normalizeUiLanguagePreference(uiLanguage));
+applyDocumentTranslations(document);
 const open = (params = '') => api.tabs.create({ url: api.runtime.getURL(`src/reader.html${params}`) });
 document.querySelector('#open').onclick = () => open();
 document.querySelector('#page').onclick = async () => {
@@ -8,6 +17,6 @@ document.querySelector('#page').onclick = async () => {
     const key = `transfer-${Date.now()}`;
     await api.storage.local.set({ [key]: data });
     open(`?transfer=${encodeURIComponent(key)}`);
-  } catch { open('?error=Extraction+impossible+sur+cette+page'); }
+  } catch { open('?errorKey=pageExtractionFailed'); }
   window.close();
 };

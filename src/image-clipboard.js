@@ -1,6 +1,8 @@
+import { t } from './i18n.js';
+
 export async function copyPngDataUrl(dataUrl, dependencies = {}) {
   if (!/^data:image\/png(?:;[^,]*)?,/i.test(dataUrl || '')) {
-    throw new TypeError('La capture doit être une image PNG.');
+    throw new TypeError(t('pngCaptureRequired'));
   }
 
   const clipboard = dependencies.clipboard ?? globalThis.navigator?.clipboard;
@@ -8,13 +10,13 @@ export async function copyPngDataUrl(dataUrl, dependencies = {}) {
   const fetchImpl = dependencies.fetchImpl ?? globalThis.fetch;
 
   if (!clipboard?.write || !ClipboardItemCtor || !fetchImpl) {
-    throw new Error('La copie d’image n’est pas disponible dans ce navigateur.');
+    throw new Error(t('imageCopyUnavailable'));
   }
 
   const response = await fetchImpl(dataUrl);
   const blob = await response.blob();
   if (blob.type !== 'image/png') {
-    throw new TypeError('La capture décodée n’est pas une image PNG.');
+    throw new TypeError(t('decodedCaptureNotPng'));
   }
 
   await clipboard.write([

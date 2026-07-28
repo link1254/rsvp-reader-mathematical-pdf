@@ -1,2 +1,19 @@
-<!doctype html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="popup.css"><title>RSVP Reader - Mathematical PDF</title></head>
-<body><main><h1>RSVP Reader</h1><p>Lecture rapide pour articles scientifiques et PDF avec équations.</p><button id="page">Lire la page actuelle</button><button id="open" class="secondary">Ouvrir le lecteur / un PDF</button><small>Pour les fichiers locaux, activez « Autoriser l’accès aux URL de fichier » dans votre navigateur.</small></main><script type="module" src="popup.js"></script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="popup.css">
+  <title>RSVP Reader - Mathematical PDF</title>
+</head>
+<body>
+  <main>
+    <h1>RSVP Reader</h1>
+    <p data-i18n="quickReadingDescription">Lecture rapide pour articles scientifiques et PDF avec équations.</p>
+    <button id="page" data-i18n="readCurrentPage">Lire la page actuelle</button>
+    <button id="open" class="secondary" data-i18n="openReader">Ouvrir le lecteur / un PDF</button>
+    <small data-i18n="localFileHint">Pour les fichiers locaux, activez « Autoriser l’accès aux URL de fichier » dans votre navigateur.</small>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

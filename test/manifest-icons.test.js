@@ -6,6 +6,20 @@ const manifest = JSON.parse(
 );
 
 describe('extension icons', () => {
+  it('declares localized extension metadata', () => {
+    expect(manifest.default_locale).toBe('fr');
+    expect(manifest.name).toBe('__MSG_appName__');
+    expect(manifest.description).toBe('__MSG_appDescription__');
+    for (const locale of ['fr', 'en']) {
+      const messages = JSON.parse(
+        readFileSync(new URL(`../public/_locales/${locale}/messages.json`, import.meta.url), 'utf8')
+      );
+      expect(messages.appName.message).toBe('RSVP Reader - Mathematical PDF');
+      expect(messages.appDescription.message).toBeTruthy();
+      expect(messages.actionTitle.message).toBeTruthy();
+    }
+  });
+
   it('declares the project logo for the extension and toolbar action', () => {
     expect(manifest.icons).toEqual({
       16: 'icons/icon-16.png',

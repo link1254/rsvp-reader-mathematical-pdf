@@ -1,6 +1,6 @@
 # Reprise du projet RSVP Reader - Mathematical PDF
 
-Dernière version préparée : **0.15.28** — 27 juillet 2026.
+Dernière version préparée : **0.16.0** — 29 juillet 2026.
 
 ## Objectif du projet
 
@@ -17,10 +17,10 @@ avec **J'ai compris — continuer**.
 
 ## État actuel
 
-- Version de l'extension : `0.15.28`.
+- Version de l'extension : `0.16.0`.
 - La compilation de production est dans le dossier `dist`.
-- L'archive `0.15.28` n'a pas encore été générée.
-- Les 135 tests automatisés passent.
+- L'archive `0.16.0` n'a pas encore été générée.
+- Les 143 tests automatisés passent.
 - Le PDF de validation utilisé est le cours
   `[Riccardo Rattazzi - EPFL] NewQFTLectureNotes_08_2024.pdf`.
 - Les pages PDF 9 à 11, la page PDF 22 (page imprimée 21), la page PDF 66
@@ -157,13 +157,26 @@ Les raisons techniques et la stratégie générale sont détaillées dans
    l'entrée du menu contextuel, la barre d'outils et la page des extensions.
 3. Le logo est également affiché en tête du README GitHub.
 
-## Documentation bilingue de la version 0.15.9
+## Documentation et interface bilingues
 
 1. `README.md` est désormais la page GitHub anglaise par défaut.
 2. `README.fr.md` conserve la documentation française complète.
 3. Les deux documents proposent un lien de changement de langue en haut de page.
-4. La documentation anglaise précise que l'interface de l'extension reste
-   actuellement en français.
+4. L'interface, les messages dynamiques, les rapports et le menu contextuel
+   sont disponibles en français et en anglais.
+5. Le réglage **Langue de l'interface / Interface language** propose le choix
+   automatique selon Edge, le français ou l'anglais.
+6. Le manifeste fournit les métadonnées localisées dans `_locales/fr` et
+   `_locales/en`.
+
+## Numérotation des équations de la version 0.16.0
+
+1. Les numéros d'équation ne sont plus lus comme des mots RSVP.
+2. Les formats `(1)`, `(2.4)`, `(2.4a)`, `(A.3)`, `(A3)`, `(IV.2)`, `[4.2]`
+   et les numéros nus placés à droite d'une équation affichée sont reconnus.
+3. Le numéro reconnu est associé à la capture correspondante et affiché dans
+   son coin inférieur droit.
+4. Les références ordinaires présentes dans le texte ne sont pas supprimées.
 
 ## Conformité des licences de la version 0.15.10
 
@@ -430,7 +443,7 @@ dans Edge, puis fermer toute ancienne fenêtre RSVP Reader encore ouverte.
 
 ## Prochaine vérification utilisateur
 
-Recharger la version 0.15.28 et effectuer les vérifications suivantes :
+Recharger la version 0.16.0 et effectuer les vérifications suivantes :
 
 - lire `straightforwardly` en profils normal puis fort ;
 - comparer son affichage à `300` puis `600 mpm` ;
@@ -439,12 +452,15 @@ Recharger la version 0.15.28 et effectuer les vérifications suivantes :
 - vérifier que les contextes voisins restent proches sans recouvrir le mot ;
 - vérifier que le contexte précédent est affiché sous la forme `…texte`.
 - activer les fonctionnalités bêta et vérifier le suivi du mot dans la phrase ;
+- basculer entre **Français** et **English** et vérifier le menu contextuel ;
+- vérifier qu'un numéro comme `(1.2)` disparaît du texte et reste visible dans
+  le coin inférieur droit de la capture d'équation.
 - cliquer sur un mot du contexte synchronisé puis revenir au mode stable.
 
 ## Phrase à donner à Codex sur un nouvel ordinateur
 
 > Ouvre `PROJECT_HANDOFF.md` et le projet RSVP Reader - Mathematical PDF.
-> Reprends le développement à partir de la version 0.15.28. Commence par vérifier l'état des
+> Reprends le développement à partir de la version 0.16.0. Commence par vérifier l'état des
 > fichiers et les tests, puis aide-moi à tester le comportement des équations
 > dans mon PDF de cours.
 

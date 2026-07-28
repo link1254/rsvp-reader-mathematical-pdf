@@ -1,4 +1,5 @@
 import * as ort from 'onnxruntime-web/wasm';
+import { t } from './i18n.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 const MODEL_PATH = 'models/pix2text-mfd-1.5.onnx';
@@ -51,7 +52,9 @@ export function modelGeometry(width, height, targetWidth = MODEL_WIDTH) {
 
 export function decodeMathRegions(output, geometry, confidenceThreshold = DEFAULT_CONFIDENCE) {
   const [, channels, count] = output.dims;
-  if (channels !== 6) throw new Error(`Sortie MFD inattendue : ${output.dims.join('x')}`);
+  if (channels !== 6) {
+    throw new Error(t('unexpectedModelOutput', { dimensions: output.dims.join('x') }));
+  }
   const regions = [];
   const data = output.data;
   for (let index = 0; index < count; index++) {
@@ -109,7 +112,7 @@ async function loadSession() {
     };
     sessionPromise = fetch(extensionUrl(MODEL_PATH))
       .then(response => {
-        if (!response.ok) throw new Error(`Modèle MFD inaccessible (${response.status})`);
+        if (!response.ok) throw new Error(t('modelUnavailable', { status: response.status }));
         return response.arrayBuffer();
       })
       .then(model => ort.InferenceSession.create(model, {

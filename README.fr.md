@@ -36,12 +36,17 @@ améliorer l'outil.
   navigation et contexte réglables ;
 - détection locale des notations mathématiques, affichées comme des captures
   fidèles du PDF plutôt que comme une transcription incertaine ;
+- extraction des numéros d'équation courants comme `(2.4)`, `(A.3a)`, `[4.2]`
+  ou un `4.2` aligné à droite : le numéro disparaît du texte RSVP et s'affiche
+  dans le coin inférieur droit de l'équation correspondante ;
 - pauses contrôlées sur les équations, avec continuation manuelle ou automatique
   et copie de l'image si nécessaire ;
 - progression visible pendant l'analyse du PDF et signalement facultatif avec
   vérification des données ;
 - polices adaptées à la dyslexie, deux thèmes et fenêtre redimensionnable dont
   le contenu et les dimensions s'adaptent entre les sessions ;
+- interfaces française et anglaise, choisies automatiquement selon la langue
+  du navigateur ou explicitement dans les réglages ;
 - traitement entièrement local : aucun PDF ni extrait n'est envoyé à un serveur.
 
 ## Navigateurs
@@ -126,12 +131,15 @@ Brave repose sur Chromium et
    - les flèches gauche et droite pour avancer mot par mot ;
    - la flèche haut ou `↶` pour reprendre la phrase actuelle ;
    - `-5` et `+5` pour se déplacer rapidement ;
-   - **J'ai compris - continuer** pour valider une équation ;
-   - **Copier l'image** pour copier la formule affichée.
+   - **J’ai compris — continuer** pour valider une équation ;
+   - **Copier l’image** pour copier la formule affichée.
 6. Utiliser **Signaler** pour préparer un rapport. L'extrait sélectionné et
    l'image de la page PDF peuvent être retirés séparément avant la copie ou
    l'envoi.
-7. Dans les réglages, activer **Tester les fonctionnalités bêta** pour essayer
+7. Ouvrir **Réglages → Langue de l’interface** pour choisir **Automatique
+   (navigateur)**, **Français** ou **English**. Ce choix traduit également le
+   menu contextuel.
+8. Dans les réglages, activer **Tester les fonctionnalités bêta** pour essayer
    le contexte synchronisé. Désactiver ce réglage restaure immédiatement
    l'affichage stable précédent.
 

@@ -1,17 +1,35 @@
 import { readerWindowLayout, readerWindowSize } from './window-layout.js';
+import {
+  normalizeUiLanguagePreference,
+  setUiLanguage,
+  t
+} from './i18n.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 let readerWindowId = null;
 const READER_WINDOW_SIZE_KEY = 'readerWindowSize';
 
-api.runtime.onInstalled.addListener(() => {
-  api.contextMenus.removeAll(() => {
-    api.contextMenus.create({
-      id: 'rsvp-selection',
-      title: 'Lire la sélection avec RSVP Reader',
-      contexts: ['selection']
-    });
+async function refreshContextMenu() {
+  const { uiLanguage = 'auto' } = await api.storage.local.get('uiLanguage');
+  setUiLanguage(normalizeUiLanguagePreference(uiLanguage));
+  await new Promise(resolve => {
+    api.contextMenus.removeAll(resolve);
   });
+  api.contextMenus.create({
+    id: 'rsvp-selection',
+    title: t('readSelection'),
+    contexts: ['selection']
+  });
+}
+
+api.runtime.onInstalled.addListener(() => {
+  void refreshContextMenu();
+});
+api.runtime.onStartup.addListener(() => {
+  void refreshContextMenu();
+});
+api.storage.onChanged.addListener(changes => {
+  if (changes.uiLanguage) void refreshContextMenu();
 });
 
 async function openHorizontalReader(tab) {
@@ -51,7 +69,7 @@ api.contextMenus.onClicked.addListener(async (info, tab) => {
     pageCapture = await api.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
   } catch (error) {
     captureError = String(error?.message || error);
-    console.warn('Capture visuelle du PDF indisponible', error);
+    console.warn(t('manualCaptureUnavailable'), error);
   }
   await api.storage.local.set({ activeSelection: {
     text: info.selectionText.trim(), sourceUrl: info.pageUrl || tab?.url || '',
@@ -61,7 +79,7 @@ api.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
     await openHorizontalReader(tab);
   } catch (error) {
-    console.error('Impossible d’ouvrir la fenêtre RSVP', error);
+    console.error('Unable to open the RSVP Reader window', error);
     await api.sidePanel.setOptions({ tabId: tab.id, path: 'src/sidepanel.html', enabled: true });
     await api.sidePanel.open({ tabId: tab.id });
   }

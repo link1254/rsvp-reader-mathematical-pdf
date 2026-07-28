@@ -1,9 +1,15 @@
 import { extractPdf } from './pdf-engine.js';
 import { segmentText, flattenSentences, orpIndex, delayFor } from './text-engine.js';
+import {
+  applyDocumentTranslations,
+  normalizeUiLanguagePreference,
+  setUiLanguage,
+  t
+} from './i18n.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 const $ = (selector) => document.querySelector(selector);
-const state = { sentences: [], tokens: [], index: 0, playing: false, timer: null, wpm: 300, mode: 'classic', smartPauses: true, showOrp: true, title: '' };
+const state = { sentences: [], tokens: [], index: 0, playing: false, timer: null, wpm: 300, mode: 'classic', smartPauses: true, showOrp: true, title: '', uiLanguage: 'auto' };
 
 function toast(message) { const el = $('#toast'); el.textContent = message; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2600); }
 function formatTime(seconds) { const s = Math.max(0, Math.round(seconds)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
@@ -34,7 +40,10 @@ function render() {
   $('#seek').value = state.index;
   const progress = state.tokens.length <= 1 ? 0 : state.index / (state.tokens.length - 1);
   $('#progressFill').style.width = `${progress * 100}%`;
-  $('#progressText').textContent = `${Math.round(progress * 100)} % · mot ${state.index + 1} / ${state.tokens.length}`;
+  $('#progressText').textContent = `${Math.round(progress * 100)} % · ${t('wordPosition', {
+    current: state.index + 1,
+    total: state.tokens.length
+  })}`;
   $('#elapsed').textContent = formatTime(estimatedSeconds(state.index));
   $('#remaining').textContent = `−${formatTime(estimatedSeconds(state.tokens.length - state.index))}`;
   document.querySelectorAll('#outline li').forEach((li, i) => li.classList.toggle('active', i === token.sentenceIndex));
@@ -58,21 +67,28 @@ function loadDocument({ text, title = 'Document', pages = null, source = '' }) {
   state.sentences = segmentText(text);
   state.tokens = flattenSentences(state.sentences);
   state.index = 0; state.title = title;
-  if (!state.tokens.length) return toast('Aucun texte exploitable trouvé. Le PDF est peut-être une image scannée.');
+  if (!state.tokens.length) return toast(t('noUsableText'));
   $('#empty').classList.add('hidden'); $('#workspace').classList.remove('hidden');
-  $('#docTitle').textContent = title; $('#meta').textContent = `${pages ? `${pages} pages · ` : ''}${state.tokens.length} mots${source ? ` · ${new URL(source).hostname}` : ''}`;
+  $('#docTitle').textContent = title;
+  $('#meta').textContent = [
+    pages ? t('pageCount', { count: pages }) : '',
+    t('wordCount', { count: state.tokens.length }),
+    source ? new URL(source).hostname : ''
+  ].filter(Boolean).join(' · ');
   $('#seek').max = Math.max(0, state.tokens.length - 1);
   $('#outline').innerHTML = state.sentences.map((s, i) => `<li data-index="${i}" title="${escapeHtml(s.text)}">${escapeHtml(s.text)}</li>`).join('');
   render(); saveSettings();
 }
 
 async function loadPdf(source, label) {
-  toast('Extraction du PDF…');
+  toast(t('pdfExtraction'));
   try {
-    const result = await extractPdf(source, (page, total) => toast(`Extraction : page ${page} / ${total}`));
+    const result = await extractPdf(source, (page, total) => toast(
+      t('pdfExtractionPage', { page, total })
+    ));
     loadDocument({ ...result, title: result.title || label, source: typeof source === 'string' ? source : '' });
-    toast('PDF prêt à lire');
-  } catch (error) { console.error(error); toast('Impossible de lire ce PDF. Vérifiez son accès ou téléchargez-le d’abord.'); }
+    toast(t('pdfReady'));
+  } catch (error) { console.error(error); toast(t('pdfReadFailed')); }
 }
 
 function setMode(mode) {
@@ -80,24 +96,43 @@ function setMode(mode) {
   $('#classic').classList.toggle('hidden', mode !== 'classic'); $('#context').classList.toggle('hidden', mode !== 'context');
   document.querySelectorAll('.mode-tabs button').forEach(b => b.classList.toggle('active', b.dataset.mode === mode)); saveSettings();
 }
-async function saveSettings() { await api.storage?.local.set({ readerSettings: { wpm: state.wpm, mode: state.mode, smartPauses: state.smartPauses, showOrp: state.showOrp, dark: document.documentElement.classList.contains('dark') } }); }
+async function saveSettings() {
+  await api.storage?.local.set({
+    uiLanguage: state.uiLanguage,
+    readerSettings: { wpm: state.wpm, mode: state.mode, smartPauses: state.smartPauses, showOrp: state.showOrp, dark: document.documentElement.classList.contains('dark') }
+  });
+}
 async function restoreSettings() {
-  const data = await api.storage?.local.get('readerSettings'); const s = data?.readerSettings || {};
+  const data = await api.storage?.local.get(['readerSettings', 'uiLanguage']); const s = data?.readerSettings || {};
+  state.uiLanguage = normalizeUiLanguagePreference(data?.uiLanguage);
+  setUiLanguage(state.uiLanguage);
+  applyDocumentTranslations(document);
   state.wpm = s.wpm || 300; state.smartPauses = s.smartPauses ?? true; state.showOrp = s.showOrp ?? true;
-  $('#wpm').value = state.wpm; $('#wpmValue').textContent = state.wpm; $('#smartPauses').checked = state.smartPauses; $('#showOrp').checked = state.showOrp;
+  $('#wpm').value = state.wpm; $('#wpmValue').textContent = state.wpm; $('#smartPauses').checked = state.smartPauses; $('#showOrp').checked = state.showOrp; $('#uiLanguage').value = state.uiLanguage;
   document.documentElement.classList.toggle('dark', !!s.dark); setMode(s.mode || 'classic');
+}
+
+function applyLanguage() {
+  setUiLanguage(state.uiLanguage);
+  applyDocumentTranslations(document);
+  if (state.tokens.length) render();
 }
 
 $('#file').addEventListener('change', async (e) => { const file = e.target.files[0]; if (file) await loadPdf({ data: new Uint8Array(await file.arrayBuffer()) }, file.name); });
 $('#urlBtn').onclick = () => { const url = $('#url').value.trim(); if (url) loadPdf(url, url.split('/').pop()); };
 $('#pasteBtn').onclick = () => $('#pasteDialog').showModal();
-$('#loadText').onclick = () => { const text = $('#pasteText').value.trim(); if (text) loadDocument({ text, title: 'Texte collé' }); };
+$('#loadText').onclick = () => { const text = $('#pasteText').value.trim(); if (text) loadDocument({ text, title: t('pastedText') }); };
 $('#play').onclick = toggle; $('#back').onclick = () => { state.index = Math.max(0, state.index - 5); render(); }; $('#forward').onclick = () => { state.index = Math.min(state.tokens.length - 1, state.index + 5); render(); };
 $('#seek').oninput = e => { state.index = Number(e.target.value); render(); };
 $('#wpm').oninput = e => { state.wpm = Number(e.target.value); $('#wpmValue').textContent = state.wpm; render(); if (state.playing) tick(); saveSettings(); };
 $('#fontSize').oninput = e => { $('#orpWord').style.fontSize = `${e.target.value}px`; $('#context').style.fontSize = `${Math.max(22, e.target.value * .64)}px`; };
 document.querySelectorAll('.mode-tabs button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 $('#settingsBtn').onclick = () => $('#settings').showModal(); $('#smartPauses').onchange = e => { state.smartPauses = e.target.checked; saveSettings(); }; $('#showOrp').onchange = e => { state.showOrp = e.target.checked; render(); saveSettings(); };
+$('#uiLanguage').onchange = event => {
+  state.uiLanguage = normalizeUiLanguagePreference(event.target.value);
+  applyLanguage();
+  saveSettings();
+};
 $('#theme').onclick = () => { document.documentElement.classList.toggle('dark'); saveSettings(); };
 $('#outline').onclick = e => { const li = e.target.closest('li'); if (!li) return; const i = state.tokens.findIndex(t => t.sentenceIndex === Number(li.dataset.index)); if (i >= 0) { state.index = i; render(); } };
 document.addEventListener('keydown', e => { if (e.target.matches('input,textarea')) return; if (e.code === 'Space') { e.preventDefault(); toggle(); } if (e.code === 'ArrowRight') { state.index = Math.min(state.tokens.length - 1, state.index + 1); render(); } if (e.code === 'ArrowLeft') { state.index = Math.max(0, state.index - 1); render(); } });
@@ -106,7 +141,16 @@ for (const event of ['dragleave','drop']) $('#drop').addEventListener(event, e =
 $('#drop').addEventListener('drop', async e => { const file = [...e.dataTransfer.files].find(f => f.type === 'application/pdf' || f.name.endsWith('.pdf')); if (file) loadPdf({ data: new Uint8Array(await file.arrayBuffer()) }, file.name); });
 
 await restoreSettings();
+api?.storage?.onChanged?.addListener(changes => {
+  if (changes.uiLanguage?.newValue
+    && changes.uiLanguage.newValue !== state.uiLanguage) {
+    state.uiLanguage = normalizeUiLanguagePreference(changes.uiLanguage.newValue);
+    $('#uiLanguage').value = state.uiLanguage;
+    applyLanguage();
+  }
+});
 const params = new URLSearchParams(location.search);
 if (params.get('pdf')) loadPdf(params.get('pdf'), 'PDF');
-if (params.get('error')) toast(params.get('error'));
+if (params.get('errorKey')) toast(t(params.get('errorKey')));
+else if (params.get('error')) toast(params.get('error'));
 if (params.get('transfer')) { const key = params.get('transfer'); const data = await api.storage.local.get(key); if (data[key]) { loadDocument(data[key]); await api.storage.local.remove(key); } }

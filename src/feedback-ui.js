@@ -7,6 +7,7 @@ import {
   publicIssueEndpoint,
   submitFeedbackReport
 } from './feedback-report.js';
+import { t } from './i18n.js';
 
 const $ = selector => document.querySelector(selector);
 
@@ -55,13 +56,15 @@ export function initializeFeedback({
     endpointError = error;
   }
 
-  intro.textContent = publicMode
-    ? 'Le rapport ouvrira une Issue GitHub publique préremplie. Vérifiez-la avant de la publier.'
-    : 'Vérifiez les informations ci-dessous. L’extrait et l’image ne sont inclus qu’avec votre accord.';
-  includeExcerptText.textContent = publicMode
-    ? 'Inclure l’extrait sélectionné dans l’Issue publique'
-    : 'Inclure l’extrait sélectionné';
   includePageLabel.classList.toggle('hidden', publicMode);
+
+  function refreshModeText() {
+    intro.textContent = t(publicMode ? 'feedbackPublicIntro' : 'feedbackPrivateIntro');
+    includeExcerptText.textContent = t(
+      publicMode ? 'includePublicExcerpt' : 'includeExcerpt'
+    );
+  }
+  refreshModeText();
 
   function setStatus(message, kind = '') {
     status.textContent = message;
@@ -87,12 +90,12 @@ export function initializeFeedback({
     if (endpointError) return [endpointError.message, 'error'];
     if (publicMode) {
       return includeExcerpt.checked
-        ? ['Attention : l’extrait sélectionné sera visible publiquement sur GitHub.', 'warning']
-        : ['Seuls la description et les diagnostics affichés seront préremplis publiquement.', 'warning'];
+        ? [t('publicExcerptWarning'), 'warning']
+        : [t('publicDiagnosticsWarning'), 'warning'];
     }
     return endpoint
-      ? ['Le rapport privé sera envoyé uniquement après votre validation.', '']
-      : ['Envoi privé non configuré : vous pouvez copier le rapport.', ''];
+      ? [t('privateReportReady'), '']
+      : [t('privateNotConfigured'), ''];
   }
 
   function refreshPreview() {
@@ -105,7 +108,7 @@ export function initializeFeedback({
     if (includePage.checked && context.pageCapture) pagePreview.src = context.pageCapture;
 
     if (!description.value.trim()) {
-      preview.textContent = 'Décrivez le problème pour afficher le rapport.';
+      preview.textContent = t('describeForPreview');
       const [message, kind] = readyStatus();
       setStatus(message, kind);
       return;
@@ -127,8 +130,8 @@ export function initializeFeedback({
     includePage.checked = false;
     send.disabled = !endpoint;
     send.textContent = publicMode
-      ? 'Ouvrir l’Issue publique'
-      : (endpoint ? 'Envoyer en privé' : 'Envoi privé à configurer');
+      ? t('openPublicIssue')
+      : (endpoint ? t('sendPrivately') : t('privateSetupRequired'));
     refreshPreview();
     dialog.showModal();
     description.focus();
@@ -141,8 +144,8 @@ export function initializeFeedback({
       const report = currentReport();
       await navigator.clipboard.writeText(formatFeedbackReport(report));
       setStatus(report.pageImage
-        ? 'Texte copié. L’image de la page reste séparée du presse-papiers.'
-        : 'Rapport copié dans le presse-papiers.', 'success');
+        ? t('copiedWithoutPage')
+        : t('reportCopied'), 'success');
     } catch (error) {
       setStatus(error.message, 'error');
     }
@@ -157,27 +160,27 @@ export function initializeFeedback({
       if (publicMode) {
         openExternalPage(publicFeedbackIssueUrl(report, endpoint));
         send.disabled = false;
-        send.textContent = 'Ouvrir à nouveau';
+        send.textContent = t('openAgain');
         setStatus(
-          'Issue préremplie ouverte. Vérifiez son contenu sur GitHub, puis publiez-la manuellement.',
+          t('publicIssueOpened'),
           'success'
         );
         return;
       }
 
-      send.textContent = 'Envoi…';
-      setStatus('Envoi du rapport privé…');
+      send.textContent = t('sending');
+      setStatus(t('sendingPrivateReport'));
       const result = await submitFeedbackReport(report, endpoint);
-      send.textContent = 'Envoyé';
+      send.textContent = t('sent');
       setStatus(
         result.reportId
-          ? `Rapport envoyé. Référence : ${result.reportId}`
-          : 'Rapport envoyé en privé.',
+          ? t('reportSentReference', { id: result.reportId })
+          : t('privateReportSent'),
         'success'
       );
     } catch (error) {
       send.disabled = false;
-      send.textContent = publicMode ? 'Réessayer d’ouvrir' : 'Réessayer';
+      send.textContent = t(publicMode ? 'retryOpening' : 'retry');
       setStatus(error.message, 'error');
     }
   });
@@ -185,6 +188,10 @@ export function initializeFeedback({
   return {
     enabled: true,
     mode,
-    endpointConfigured: !!endpoint
+    endpointConfigured: !!endpoint,
+    refreshLanguage() {
+      refreshModeText();
+      refreshPreview();
+    }
   };
 }

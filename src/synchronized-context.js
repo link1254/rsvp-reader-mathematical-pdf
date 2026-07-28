@@ -31,7 +31,7 @@ function createToken(document, item, index, getEquationImage) {
   }
 
   token.classList.add('equation');
-  token.setAttribute('aria-label', item.value || 'Équation');
+  token.setAttribute('aria-label', item.value || t('equation'));
   const imageUrl = getEquationImage(item);
   if (imageUrl) {
     const image = document.createElement('img');
@@ -152,3 +152,4 @@ export function createSynchronizedContext({
 
   return { reset, update };
 }
+import { t } from './i18n.js';

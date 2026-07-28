@@ -1,5 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { t } from './i18n.js';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -43,6 +44,6 @@ export async function extractPdf(source, onProgress = () => {}) {
   return {
     text: pages.join('\n\n'),
     pages: pdf.numPages,
-    title: metadata.info?.Title || 'Document scientifique'
+    title: metadata.info?.Title || t('scientificDocument')
   };
 }

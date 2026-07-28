@@ -33,12 +33,17 @@ idea useful can help test, fix, and improve it.
   passage context;
 - local detection of mathematical notation, displayed as faithful PDF snapshots
   instead of uncertain transcription;
+- extraction of common equation labels such as `(2.4)`, `(A.3a)`, `[4.2]`, or
+  a right-aligned `4.2`: the label is removed from the RSVP text and displayed
+  in the lower-right corner of the corresponding equation;
 - controlled equation pauses, with manual or automatic continuation and image
   copying when needed;
 - visible progress during PDF analysis and an optional, privacy-reviewed problem
   report;
 - dyslexia-friendly fonts, two interface themes, and a resizable reader whose
   content and dimensions adapt between sessions;
+- French and English interfaces, selected automatically from the browser
+  language or explicitly in the reader settings;
 - fully local processing: no PDF or selected passage is sent to a server.
 
 ## Browser support
@@ -120,22 +125,21 @@ Brave is based on Chromium and
 1. Open a PDF with a text layer in the browser.
 2. Select the passage you want to read.
 3. Right-click the selection.
-4. Choose **Lire la sélection avec RSVP Reader**.
+4. Choose **Read selection with RSVP Reader**.
 5. Wait for the local analysis to finish, then use:
    - `Space` to play or pause;
    - the left and right arrow keys to move one word at a time;
    - the up arrow or `↶` to restart the current sentence;
    - `-5` and `+5` to move quickly;
-   - **J'ai compris - continuer** to confirm an equation;
-   - **Copier l'image** to copy the displayed formula.
-6. Select **Signaler** to prepare a problem report. The selected excerpt and PDF
+   - **I understand — continue** to confirm an equation;
+   - **Copy image** to copy the displayed formula.
+6. Select **Report** to prepare a problem report. The selected excerpt and PDF
    page image can each be removed before copying or sending it.
-7. In settings, enable **Tester les fonctionnalités bêta** to try the
+7. Open **Settings → Interface language** to choose **Automatic (browser)**,
+   **Français**, or **English**. This choice also updates the context menu.
+8. In settings, enable **Try beta features** to try the
    synchronized context. Disable it at any time to restore the previous stable
    layout immediately.
-
-The interface is currently in French. English interface localization is not yet
-implemented.
 
 If a very short selection appears in several places in the document, the
 extension refuses to choose a page arbitrarily. Select a slightly longer
@@ -151,7 +155,7 @@ saved while testing the beta.
 
 ## Feedback reports
 
-By default, **Signaler** opens a prefilled public Issue on this GitHub repository.
+By default, **Report** opens a prefilled public Issue on this GitHub repository.
 Nothing is published automatically: the user must review the Issue on GitHub
 and submit it manually. The description and displayed diagnostics are public.
 The selected excerpt is opt-in and unchecked by default; a PDF page image is

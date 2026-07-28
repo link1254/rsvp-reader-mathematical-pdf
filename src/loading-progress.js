@@ -1,6 +1,8 @@
+import { t } from './i18n.js';
+
 export function normalizeLoadingProgress(details = {}) {
   if (details.indeterminate || !Number.isFinite(details.value)) {
-    return { value: null, label: 'En cours' };
+    return { value: null, label: t('inProgress') };
   }
 
   const value = Math.max(0, Math.min(100, Math.round(details.value)));

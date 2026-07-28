@@ -15,16 +15,17 @@ import {
   tokenizeDetectedProse
 } from './selection-engine.js';
 import { selectionSearchProgress } from './loading-progress.js';
+import { t } from './i18n.js';
 
 function reportDetectionProgress(onStatus, stage) {
   const states = {
-    preparing: ['Préparation de l’image pour le modèle…', { value: 76 }],
-    queued: ['En attente du moteur de détection local…', { indeterminate: true }],
-    model: ['Initialisation du modèle mathématique local…', { indeterminate: true }],
-    inference: ['Analyse des notations mathématiques…', { indeterminate: true }],
-    postprocess: ['Vérification des régions détectées…', { value: 94 }]
+    preparing: [t('preparingModelImage'), { value: 76 }],
+    queued: [t('waitingDetectionEngine'), { indeterminate: true }],
+    model: [t('initializingMathModel'), { indeterminate: true }],
+    inference: [t('analyzingMathNotations'), { indeterminate: true }],
+    postprocess: [t('checkingDetectedRegions'), { value: 94 }]
   };
-  const [message, details] = states[stage] || ['Analyse mathématique locale…', { indeterminate: true }];
+  const [message, details] = states[stage] || [t('localMathAnalysisProgress'), { indeterminate: true }];
   onStatus(message, details);
 }
 
@@ -298,7 +299,7 @@ async function findSelectionPage(pdf, payload, onStatus, signal = null) {
     const pageNumber = pageNumbers[index];
     signal?.throwIfAborted();
     onStatus(
-      `Recherche de la sélection : page ${pageNumber}/${pdf.numPages}…`,
+      t('searchingSelectionPage', { page: pageNumber, total: pdf.numPages }),
       { value: selectionSearchProgress(index + 1, pageNumbers.length) }
     );
     const page = await pdf.getPage(pageNumber);
@@ -322,7 +323,7 @@ export function visualRsvpItems(segments, canvas, pageNumber) {
       if (!image) continue;
       images[equationId] = image;
       const equationItem = {
-        value: region.kind === 'display' ? 'Équation' : 'Notation mathématique',
+        value: t(region.kind === 'display' ? 'equation' : 'mathNotation'),
         type: 'equation',
         equationId,
         mathKind: region.kind,
@@ -338,7 +339,7 @@ export function visualRsvpItems(segments, canvas, pageNumber) {
       if (token.type === 'equation') {
         const equationId = `unresolved-${pageNumber}-${unresolvedCount++}`;
         items.push({
-          value: 'Notation mathématique',
+          value: t('mathNotation'),
           type: 'equation',
           equationId,
           unresolved: true,
@@ -359,16 +360,16 @@ export async function renderVisualSelectionFromPdf(
 ) {
   signal?.throwIfAborted();
   const pdfUrl = resolvePdfUrl(payload);
-  if (!pdfUrl) throw new Error('Adresse du fichier PDF introuvable');
+  if (!pdfUrl) throw new Error(t('pdfAddressMissing'));
   const pdfjsLib = await import('pdfjs-dist');
   const { default: workerUrl } = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
   pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-  onStatus('Ouverture du PDF…', { indeterminate: true });
+  onStatus(t('openingPdf'), { indeterminate: true });
   const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
   try {
     const selectedPage = await findSelectionPage(pdf, payload, onStatus, signal);
     if (!selectedPage) {
-      throw new Error('Sélection PDF introuvable ou ambiguë. Sélectionnez un passage un peu plus long.');
+      throw new Error(t('pdfSelectionAmbiguous'));
     }
 
     const { page, pageNumber, content, selection } = selectedPage;
@@ -377,10 +378,10 @@ export async function renderVisualSelectionFromPdf(
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(viewport.width);
     canvas.height = Math.round(viewport.height);
-    onStatus(`Rendu de la page ${pageNumber}…`, { value: 73 });
+    onStatus(t('renderingPage', { page: pageNumber }), { value: 73 });
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
     signal?.throwIfAborted();
-    onStatus('Détection locale de toutes les notations mathématiques…', { value: 75 });
+    onStatus(t('detectingAllMath'), { value: 75 });
     const candidateRegions = await detectMathRegions(canvas, {
       confidence: .4,
       signal,
@@ -392,10 +393,10 @@ export async function renderVisualSelectionFromPdf(
       candidateRegions
     );
     signal?.throwIfAborted();
-    onStatus('Préparation de la lecture…', { value: 97 });
+    onStatus(t('preparingReading'), { value: 97 });
     const segments = buildSelectionSegments(content.items, viewport, detectedRegions, selection);
     const result = visualRsvpItems(segments, canvas, pageNumber);
-    if (!result.items.length) throw new Error('La sélection ne contient aucun élément lisible');
+    if (!result.items.length) throw new Error(t('noReadableSelection'));
     return {
       ...result,
       pageNumber,
@@ -410,7 +411,7 @@ export async function renderVisualSelectionFromPdf(
 
 export async function renderEquationFromPdf(payload, onStatus = () => {}, equationRequests = []) {
   const pdfUrl = resolvePdfUrl(payload);
-  if (!pdfUrl) throw new Error('Adresse du fichier PDF introuvable');
+  if (!pdfUrl) throw new Error(t('pdfAddressMissing'));
   const requestedEquations = equationRequests.filter(Boolean).map((request, index) => {
     const normalized = typeof request === 'string'
       ? { id: `equation-${index}`, value: request, before: '', after: '' }
@@ -435,7 +436,7 @@ export async function renderEquationFromPdf(payload, onStatus = () => {}, equati
   const anchor = target.slice(0, Math.min(5, target.length));
 
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-    onStatus(`Recherche de la page ${pageNumber}/${pdf.numPages}…`);
+    onStatus(t('searchingPage', { page: pageNumber, total: pdf.numPages }));
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
     const pageWords = selectionWords(content.items.map(item => item.str).join(' '));
@@ -445,7 +446,7 @@ export async function renderEquationFromPdf(payload, onStatus = () => {}, equati
     const viewport = page.getViewport({ scale: 2 });
     const canvas = document.createElement('canvas'); canvas.width = Math.round(viewport.width); canvas.height = Math.round(viewport.height);
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    onStatus('Détection locale des mathématiques…');
+    onStatus(t('detectingMath'));
     const detectedRegions = await detectMathRegions(canvas);
     const selectionRange = locateSelection(content.items, payload.text, viewport);
     const relevantRegions = selectionRange
@@ -488,5 +489,5 @@ export async function renderEquationFromPdf(payload, onStatus = () => {}, equati
     if (Object.keys(images).length) return { images, pageNumber, pdfUrl };
   }
   const requested = requestedEquations.map(request => request.value);
-  throw new Error(`Équation ${requested.join(', ')} introuvable dans le PDF`);
+  throw new Error(t('equationNotFound', { labels: requested.join(', ') }));
 }

@@ -1,23 +1,92 @@
 <!doctype html>
-<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RSVP Reader - Mathematical PDF</title><link rel="stylesheet" href="reader.css"></head>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RSVP Reader - Mathematical PDF</title>
+  <link rel="stylesheet" href="reader.css">
+</head>
 <body>
-  <header><div><span class="logo">R▸</span><strong>RSVP Reader</strong></div><div class="header-actions"><button id="theme" class="icon" title="Changer le thème">◐</button><button id="settingsBtn" class="icon" title="Réglages">⚙</button></div></header>
+  <header>
+    <div><span class="logo">R▸</span><strong>RSVP Reader</strong></div>
+    <div class="header-actions">
+      <button id="theme" class="icon" data-i18n-title="changeTheme" title="Changer le thème">◐</button>
+      <button id="settingsBtn" class="icon" data-i18n-title="settings" title="Réglages">⚙</button>
+    </div>
+  </header>
   <main>
-    <section id="empty" class="empty"><div class="drop" id="drop"><div class="file-icon">PDF</div><h1>Commencez votre lecture</h1><p>Déposez un article PDF ici, choisissez un fichier, collez une URL ou du texte.</p><div class="actions"><label class="primary">Choisir un PDF<input id="file" type="file" accept="application/pdf,.pdf" hidden></label><button id="pasteBtn">Coller du texte</button></div><div class="url-row"><input id="url" type="url" placeholder="https://…/article.pdf"><button id="urlBtn">Ouvrir</button></div><p class="hint">Les équations sont détectées et bénéficient automatiquement d’un temps de lecture plus long.</p></div></section>
+    <section id="empty" class="empty">
+      <div class="drop" id="drop">
+        <div class="file-icon">PDF</div>
+        <h1 data-i18n="startReading">Commencez votre lecture</h1>
+        <p data-i18n="startReadingHelp">Déposez un article PDF ici, choisissez un fichier, collez une URL ou du texte.</p>
+        <div class="actions">
+          <label class="primary"><span data-i18n="choosePdf">Choisir un PDF</span><input id="file" type="file" accept="application/pdf,.pdf" hidden></label>
+          <button id="pasteBtn" data-i18n="pasteText">Coller du texte</button>
+        </div>
+        <div class="url-row">
+          <input id="url" type="url" placeholder="https://…/article.pdf">
+          <button id="urlBtn" data-i18n="open">Ouvrir</button>
+        </div>
+        <p class="hint" data-i18n="equationReadingHint">Les équations sont détectées et bénéficient automatiquement d’un temps de lecture plus long.</p>
+      </div>
+    </section>
     <section id="workspace" class="workspace hidden">
-      <aside><h2 id="docTitle">Document</h2><div id="meta" class="meta"></div><div class="progress-line"><span id="progressFill"></span></div><p id="progressText">0 %</p><h3>Phrases</h3><ol id="outline"></ol></aside>
+      <aside>
+        <h2 id="docTitle">Document</h2>
+        <div id="meta" class="meta"></div>
+        <div class="progress-line"><span id="progressFill"></span></div>
+        <p id="progressText">0 %</p>
+        <h3 data-i18n="sentences">Phrases</h3>
+        <ol id="outline"></ol>
+      </aside>
       <article class="stage">
-        <div class="mode-tabs"><button data-mode="classic" class="active">Mot central</button><button data-mode="context">Phrase contextuelle</button></div>
+        <div class="mode-tabs">
+          <button data-mode="classic" class="active" data-i18n="centralWord">Mot central</button>
+          <button data-mode="context" data-i18n="sentenceContext">Phrase contextuelle</button>
+        </div>
         <div id="classic" class="classic"><div class="fixation top"></div><div id="orpWord" class="orp-word"></div><div class="fixation bottom"></div></div>
         <div id="context" class="context hidden"></div>
-        <div id="equationBadge" class="equation-badge hidden">Équation · pause adaptée</div>
-        <div class="transport"><button id="back" title="Reculer">−5</button><button id="play" class="play" title="Lecture / pause">▶</button><button id="forward" title="Avancer">+5</button></div>
+        <div id="equationBadge" class="equation-badge hidden" data-i18n="equationAdaptivePause">Équation · pause adaptée</div>
+        <div class="transport">
+          <button id="back" data-i18n-title="goBack" title="Reculer">−5</button>
+          <button id="play" class="play" data-i18n-title="playPause" title="Lecture / pause">▶</button>
+          <button id="forward" data-i18n-title="goForward" title="Avancer">+5</button>
+        </div>
         <div class="scrub"><span id="elapsed">0:00</span><input id="seek" type="range" min="0" max="0" value="0"><span id="remaining">0:00</span></div>
-        <div class="quick-controls"><label>Vitesse <strong><span id="wpmValue">300</span> MPM</strong><input id="wpm" type="range" min="80" max="1000" step="10" value="300"></label><label>Taille <input id="fontSize" type="range" min="28" max="96" value="58"></label></div>
+        <div class="quick-controls">
+          <label><span data-i18n="speed">Vitesse</span> <strong><span id="wpmValue">300</span> <span data-i18n="wordsPerMinuteAbbreviation">MPM</span></strong><input id="wpm" type="range" min="80" max="1000" step="10" value="300"></label>
+          <label><span data-i18n="size">Taille</span> <input id="fontSize" type="range" min="28" max="96" value="58"></label>
+        </div>
       </article>
     </section>
   </main>
-  <dialog id="pasteDialog"><form method="dialog"><h2>Coller un texte</h2><textarea id="pasteText" placeholder="Collez ici le contenu d’un article…"></textarea><div><button value="cancel">Annuler</button><button id="loadText" value="default" class="primary">Charger</button></div></form></dialog>
-  <dialog id="settings"><form method="dialog"><h2>Réglages</h2><label><input id="smartPauses" type="checkbox" checked> Pauses intelligentes (ponctuation, mots longs, équations)</label><label><input id="showOrp" type="checkbox" checked> Point de reconnaissance optimal en rouge</label><label>Langue de segmentation<select id="language"><option value="fr">Français</option><option value="en">English</option></select></label><button value="default" class="primary">Fermer</button></form></dialog>
-  <div id="toast" role="status"></div><script type="module" src="reader.js"></script>
-</body></html>
+  <dialog id="pasteDialog">
+    <form method="dialog">
+      <h2 data-i18n="pasteTextTitle">Coller un texte</h2>
+      <textarea id="pasteText" data-i18n-placeholder="pasteTextPlaceholder" placeholder="Collez ici le contenu d’un article…"></textarea>
+      <div>
+        <button value="cancel" data-i18n="cancel">Annuler</button>
+        <button id="loadText" value="default" class="primary" data-i18n="load">Charger</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="settings">
+    <form method="dialog">
+      <h2 data-i18n="settings">Réglages</h2>
+      <label><input id="smartPauses" type="checkbox" checked> <span data-i18n="smartPauses">Pauses intelligentes (ponctuation, mots longs, équations)</span></label>
+      <label><input id="showOrp" type="checkbox" checked> <span data-i18n="showOrp">Point de reconnaissance optimal en rouge</span></label>
+      <label><span data-i18n="interfaceLanguage">Langue de l’interface</span>
+        <select id="uiLanguage">
+          <option value="auto" data-i18n="languageAuto">Automatique (navigateur)</option>
+          <option value="fr" data-i18n="french">Français</option>
+          <option value="en" data-i18n="english">English</option>
+        </select>
+      </label>
+      <button value="default" class="primary" data-i18n="close">Fermer</button>
+    </form>
+  </dialog>
+  <div id="toast" role="status"></div>
+  <script type="module" src="reader.js"></script>
+</body>
+</html>

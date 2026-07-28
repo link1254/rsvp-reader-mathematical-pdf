@@ -22,17 +22,29 @@ import {
 import { readerContentScale } from './window-layout.js';
 import { initializeFeedback } from './feedback-ui.js';
 import { createSynchronizedContext } from './synchronized-context.js';
+import {
+  applyDocumentTranslations,
+  getUiLanguage,
+  normalizeUiLanguagePreference,
+  setUiLanguage,
+  t
+} from './i18n.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
+const extensionStorage = api?.storage?.local ?? {
+  get: async () => ({}),
+  set: async () => {}
+};
 const $ = selector => document.querySelector(selector);
-const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, betaFeatures: false, fontSize: 62, readerFont: 'system', readerTheme: 'classic', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
+const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, betaFeatures: false, fontSize: 62, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
 let selectionLoadId = 0;
 let selectionAbortController = null;
+let feedbackController = null;
 
 function restoreWaitingUi() {
-  $('#waiting h1').textContent = 'Sélectionnez un passage';
-  $('#waiting p').textContent = 'Dans votre PDF, sélectionnez le texte à lire puis faites un clic droit :';
-  $('#waitingAction').textContent = 'Lire la sélection avec RSVP Reader';
+  $('#waiting h1').textContent = t('selectPassage');
+  $('#waiting p').textContent = t('selectPassageHelp');
+  $('#waitingAction').textContent = t('readSelection');
   $('#loadingProgress').classList.add('hidden');
 }
 
@@ -175,8 +187,17 @@ function updateBetaInterface() {
   $('#betaFeatures').checked = state.betaFeatures;
   $('#horizontalContext').disabled = state.betaFeatures;
   $('#horizontalContextSetting').classList.toggle('disabled', state.betaFeatures);
-  $('#betaSettingStatus').textContent = state.betaFeatures ? 'Bêta active' : 'Version stable';
+  $('#betaSettingStatus').textContent = t(state.betaFeatures ? 'betaActive' : 'stableVersion');
   $('#betaBadge').classList.toggle('hidden', !state.betaFeatures);
+}
+
+function applyLanguage() {
+  setUiLanguage(state.uiLanguage);
+  applyDocumentTranslations(document);
+  updateBetaInterface();
+  if (state.items.length) render();
+  else restoreWaitingUi();
+  feedbackController?.refreshLanguage?.();
 }
 
 function applyResponsiveSizing(isEquation = state.items[state.index]?.type === 'equation') {
@@ -220,8 +241,8 @@ function render() {
   $('#equationCard').classList.toggle('hidden', !isEquation);
   $('#equation').textContent = isEquation && !equationImage
     ? (state.equationLookupComplete
-        ? (item.errorMessage || 'Capture fidèle indisponible')
-        : 'Recherche dans le PDF…')
+        ? (item.errorMessage || t('faithfulCaptureUnavailable'))
+        : t('searchingPdf'))
     : '';
   $('#equationVisual').classList.toggle('hidden', !isEquation || !equationImage);
   $('#equation').classList.toggle('hidden', isEquation && !!equationImage);
@@ -231,23 +252,28 @@ function render() {
     !isEquation || !equationImage || !equationLabel
   );
   $('#equationSource').textContent = isEquation && equationImage
-    ? 'Détection locale — capture du PDF'
+    ? t('localPdfCapture')
     : (isEquation && state.equationLookupComplete
-        ? (state.pageCapture ? 'Encadrez cette formule manuellement' : 'Notation non identifiée')
-        : 'Analyse locale de la page PDF');
+        ? (state.pageCapture ? t('frameManually') : t('notationUnidentified'))
+        : t('analyzingPdfPage'));
   if (isEquation && equationImage) $('#equationSnapshot').src = equationImage;
   $('#copyEquationImage').classList.toggle('hidden', !isEquation || !equationImage);
   $('#copyEquationImage').disabled = false;
-  $('#copyEquationImage').textContent = 'Copier l’image';
-  $('#copyEquationImage').title = 'Copier l’image de l’équation';
+  $('#copyEquationImage').textContent = t('copyImage');
+  $('#copyEquationImage').title = t('copyEquationImage');
   $('#manualCaptureEquation').classList.toggle('hidden', !isEquation || !!equationImage || !state.pageCapture);
   $('#continueEquation').classList.toggle('hidden', !isEquation || state.equationMode !== 'manual');
-  $('#continueEquation').textContent = state.index >= state.items.length - 1 ? 'Terminer' : 'J’ai compris — continuer';
+  $('#continueEquation').textContent = t(
+    state.index >= state.items.length - 1 ? 'finish' : 'understoodContinue'
+  );
   $('#seek').value = state.index;
   $('#position').textContent = `${state.index + 1} / ${state.items.length}`;
   $('#percent').textContent = `${Math.round((state.index + 1) / state.items.length * 100)} %`;
   document.querySelectorAll('#paragraphText [data-index]').forEach(node => node.classList.toggle('active', Number(node.dataset.index) === state.index));
-  $('#overviewPosition').textContent = `Mot ${state.index + 1} sur ${state.items.length}`;
+  $('#overviewPosition').textContent = t('wordPosition', {
+    current: state.index + 1,
+    total: state.items.length
+  });
   $('#paragraphText [data-index].active')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
 }
 
@@ -285,10 +311,10 @@ async function loadSelection(payload) {
   state.pageCapture = payload?.pageCapture || null;
   $('#reader').classList.add('hidden');
   $('#waiting').classList.remove('hidden');
-  $('#waiting h1').textContent = 'Analyse mathématique locale';
-  setLoadingProgress('Ouverture du PDF…', { indeterminate: true });
-  $('#waitingAction').textContent = 'Le document reste sur cet ordinateur.';
-  try { $('#source').textContent = payload.sourceUrl ? new URL(payload.sourceUrl).pathname.split('/').pop() || 'PDF ouvert' : 'Sélection PDF'; } catch { $('#source').textContent = 'Sélection PDF'; }
+  $('#waiting h1').textContent = t('localMathAnalysis');
+  setLoadingProgress(t('openingPdf'), { indeterminate: true });
+  $('#waitingAction').textContent = t('documentStaysLocal');
+  try { $('#source').textContent = payload.sourceUrl ? new URL(payload.sourceUrl).pathname.split('/').pop() || t('openPdf') : t('pdfSelection'); } catch { $('#source').textContent = t('pdfSelection'); }
   try {
     const result = await renderVisualSelectionFromPdf(
       payload,
@@ -298,7 +324,7 @@ async function loadSelection(payload) {
       { signal: abortController.signal }
     );
     if (loadId !== selectionLoadId) return;
-    setLoadingProgress('Lecture prête', { value: 100 });
+    setLoadingProgress(t('readingReady'), { value: 100 });
     state.items = result.items;
     state.equationImages = result.images || {};
     state.pageCapture = result.pageCapture || state.pageCapture || null;
@@ -307,21 +333,21 @@ async function loadSelection(payload) {
     const count = Object.keys(state.equationImages).length;
     const total = state.items.filter(item => item.type === 'equation').length;
     $('#captureButton').textContent = total && count === total
-      ? `✓ ${count} notations`
-      : (total ? `⚠ ${count}/${total} notations` : 'Aucune notation');
+      ? t('allNotations', { count })
+      : (total ? t('someNotations', { count, total }) : t('noNotation'));
   } catch (error) {
     if (error?.name === 'AbortError') return;
     if (loadId !== selectionLoadId) return;
     console.warn(error);
     state.items = [{
-      value: 'Analyse mathématique indisponible',
+      value: t('mathAnalysisUnavailable'),
       type: 'equation',
       equationId: 'detection-failed',
       unresolved: true,
       errorMessage: error.message
     }];
     state.equationLookupComplete = true;
-    $('#captureButton').textContent = '⚠ Détection indisponible';
+    $('#captureButton').textContent = t('detectionUnavailable');
     $('#captureButton').title = error.message;
   }
   if (!state.items.length) return;
@@ -330,8 +356,8 @@ async function loadSelection(payload) {
   $('#captureButton').classList.remove('hidden');
   $('#captureButton').disabled = !state.pageCapture;
   $('#captureButton').title = state.pageCapture
-    ? 'Choisir visuellement une notation'
-    : 'Capture manuelle indisponible';
+    ? t('chooseNotation')
+    : t('manualCaptureUnavailable');
   $('#seek').max = state.items.length - 1;
   $('#paragraphText').innerHTML = state.items.map((item, index) => `<button data-index="${index}" class="${item.type === 'equation' ? 'math' : ''}">${escapeHtml(item.value)}</button>`).join(' ');
   render();
@@ -383,17 +409,17 @@ $('#copyEquationImage').onclick = async () => {
   button.disabled = true;
   try {
     await copyPngDataUrl(image);
-    button.textContent = 'Image copiée';
+    button.textContent = t('imageCopied');
   } catch (error) {
-    console.warn('Impossible de copier la capture de l’équation', error);
-    button.textContent = 'Copie impossible';
+    console.warn(t('copyEquationFailed'), error);
+    button.textContent = t('copyFailed');
     button.title = error.message;
   }
 
   setTimeout(() => {
     button.disabled = false;
-    button.textContent = 'Copier l’image';
-    button.title = 'Copier l’image de l’équation';
+    button.textContent = t('copyImage');
+    button.title = t('copyEquationImage');
   }, 1600);
 };
 $('#seek').oninput = event => { state.index = Number(event.target.value); render(); if (state.playing) schedule(); };
@@ -428,6 +454,11 @@ $('#readerTheme').onchange = event => {
   state.readerTheme = applyReaderTheme(document.documentElement, event.target.value);
   save();
 };
+$('#uiLanguage').onchange = event => {
+  state.uiLanguage = normalizeUiLanguagePreference(event.target.value);
+  applyLanguage();
+  save();
+};
 $('#settingsButton').onclick = () => $('#settings').showModal();
 $('#clear').onclick = clearSelection;
 $('#paragraphText').onclick = event => { const word = event.target.closest('[data-index]'); if (!word) return; state.index = Number(word.dataset.index); render(); if (state.playing) schedule(); };
@@ -455,9 +486,17 @@ window.addEventListener('resize', () => {
   resizeFrame = requestAnimationFrame(() => applyResponsiveSizing());
 });
 
-async function save() { await api.storage.local.set({ panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, betaFeatures: state.betaFeatures, fontSize: state.fontSize, readerFont: state.readerFont, readerTheme: state.readerTheme } }); }
+async function save() {
+  await extensionStorage.set({
+    uiLanguage: state.uiLanguage,
+    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, betaFeatures: state.betaFeatures, fontSize: state.fontSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
+  });
+}
 async function restore() {
-  const { panelSettings = {} } = await api.storage.local.get('panelSettings'); Object.assign(state, panelSettings);
+  const { panelSettings = {}, uiLanguage = 'auto' } = await extensionStorage.get(['panelSettings', 'uiLanguage']); Object.assign(state, panelSettings);
+  state.uiLanguage = normalizeUiLanguagePreference(uiLanguage);
+  setUiLanguage(state.uiLanguage);
+  applyDocumentTranslations(document);
   state.adaptivePacing = normalizeAdaptivePacing(state.adaptivePacing);
   state.horizontalContext = state.horizontalContext === true;
   state.betaFeatures = state.betaFeatures === true;
@@ -467,17 +506,17 @@ async function restore() {
   applyReaderTheme(document.documentElement, state.readerTheme);
   applyContextLayout();
   updateBetaInterface();
-  $('#wpm').value = state.wpm; $('#wpmValue').textContent = state.wpm; $('#fontSize').value = state.fontSize; $('#contextSize').value = state.contextSize; $('#horizontalContext').checked = state.horizontalContext; $('#readerFont').value = state.readerFont; $('#readerTheme').value = state.readerTheme;
+  $('#wpm').value = state.wpm; $('#wpmValue').textContent = state.wpm; $('#fontSize').value = state.fontSize; $('#contextSize').value = state.contextSize; $('#horizontalContext').checked = state.horizontalContext; $('#readerFont').value = state.readerFont; $('#readerTheme').value = state.readerTheme; $('#uiLanguage').value = state.uiLanguage;
   const radio = $(`[name="equationMode"][value="${state.equationMode}"]`); if (radio) radio.checked = true;
   const pacingRadio = $(`[name="adaptivePacing"][value="${state.adaptivePacing}"]`); if (pacingRadio) pacingRadio.checked = true;
 }
 
 await restore();
-initializeFeedback({
+feedbackController = initializeFeedback({
   getContext: () => {
     const payload = state.selectionPayload || {};
     return {
-      extensionVersion: api.runtime.getManifest().version,
+      extensionVersion: api?.runtime?.getManifest?.().version || 'development',
       browser: navigator.userAgent,
       pageNumber: state.pageNumber,
       itemIndex: state.items.length ? state.index : null,
@@ -486,13 +525,22 @@ initializeFeedback({
       unresolvedEquationCount: state.items.filter(item => item.unresolved).length,
       sourceUrl: payload.frameUrl || payload.sourceUrl || payload.tabUrl || '',
       selectionText: payload.text || '',
-      pageCapture: state.pageCapture
+      pageCapture: state.pageCapture,
+      locale: getUiLanguage()
     };
   },
   onOpen: pause
 });
-const { activeSelection } = await api.storage.local.get('activeSelection'); if (activeSelection) loadSelection(activeSelection);
-api.storage.onChanged.addListener(changes => { if (changes.activeSelection?.newValue) loadSelection(changes.activeSelection.newValue); });
+const { activeSelection } = await extensionStorage.get('activeSelection'); if (activeSelection) loadSelection(activeSelection);
+api?.storage?.onChanged?.addListener(changes => {
+  if (changes.activeSelection?.newValue) loadSelection(changes.activeSelection.newValue);
+  if (changes.uiLanguage?.newValue
+    && changes.uiLanguage.newValue !== state.uiLanguage) {
+    state.uiLanguage = normalizeUiLanguagePreference(changes.uiLanguage.newValue);
+    $('#uiLanguage').value = state.uiLanguage;
+    applyLanguage();
+  }
+});
 
 const cropStage = $('.crop-stage');
 const cropCanvas = $('#cropCanvas');
@@ -533,6 +581,6 @@ $('#applyCrop').onclick = async () => {
   if (!state.cropRect) return;
   const image = await cropCaptureRect(state.pageCapture, state.cropRect);
   if (state.items[state.index]?.type === 'equation') state.items[state.index].manualImage = image;
-  else { state.items.splice(state.index, 0, { value:'Équation capturée manuellement', type:'equation', manualImage:image }); }
+  else { state.items.splice(state.index, 0, { value:t('manuallyCapturedEquation'), type:'equation', manualImage:image }); }
   $('#seek').max = state.items.length - 1; $('#cropDialog').close(); render(); pause();
 };
