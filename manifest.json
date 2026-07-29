@@ -12,7 +12,7 @@
     "128": "icons/icon-128.png"
   },
   "minimum_chrome_version": "116",
-  "permissions": ["activeTab", "clipboardWrite", "contextMenus", "sidePanel", "storage", "tabs", "windows"],
+  "permissions": ["activeTab", "clipboardWrite", "contextMenus", "sidePanel", "storage", "tabs", "tts", "windows"],
   "host_permissions": ["file:///*", "http://*/*", "https://*/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"

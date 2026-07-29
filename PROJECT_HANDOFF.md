@@ -381,6 +381,26 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 7. Les mots longs continuent de réduire leur taille si la fenêtre devient
    étroite.
 
+## Lecture audio synchronisée de la branche bêta
+
+1. Le réglage **Lecture audio** reste désactivé par défaut et utilise l’API
+   `chrome.tts`, prise en charge par Microsoft Edge.
+2. Les mots sont envoyés par segments continus afin d’éviter une voix hachée.
+   L’affichage RSVP avance sur les événements `word` du moteur vocal.
+3. La vitesse vocale est calculée depuis les MPM : `200 mpm` correspond à
+   `rate = 1`, avec une plage limitée de `0.4` à `4`.
+4. La langue française ou anglaise est détectée dans chaque segment. Le réglage
+   permet aussi de choisir explicitement une voix.
+5. Seules les voix déclarées locales par Chromium sont proposées afin que le
+   passage sélectionné ne soit pas envoyé à un service vocal distant.
+6. Pause, déplacement, reprise de phrase, changement de vitesse et changement
+   de voix arrêtent le segment courant puis repartent du mot affiché.
+7. Une équation n’est pas vocalisée. Son arrêt manuel ou automatique conserve
+   le comportement déjà utilisé par la lecture visuelle.
+8. Si une voix ne produit pas d’événements de mots, le minuteur RSVP sert de
+   solution de repli. En cas d’erreur du moteur vocal, l’audio est désactivé et
+   la lecture visuelle continue.
+
 ## Corrections importantes des versions 0.13.0 à 0.13.5
 
 1. Un numéro de section comme `1.2.` n'est plus confondu avec le numéro
@@ -448,6 +468,11 @@ Recharger la version 0.16.0 et effectuer les vérifications suivantes :
   que l'aperçu du passage utilise toute la hauteur inférieure disponible ;
 - tester **Taille des images d’équation** à `60 %`, `100 %` et `180 %`, avec
   une expression courte puis une équation large.
+- dans **Lecture audio**, activer **Lire à voix haute**, choisir une voix locale
+  et vérifier à `200`, `300` puis `600 mpm` que le mot affiché correspond au mot
+  prononcé ;
+- pendant la lecture audio, tester Pause, `−5`, `+5`, la reprise de phrase et
+  une équation en mode manuel.
 
 ## Phrase à donner à Codex sur un nouvel ordinateur
 

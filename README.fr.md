@@ -37,6 +37,8 @@ améliorer l'outil.
 - lecture RSVP du texte sélectionné directement dans le lecteur PDF du
   navigateur, avec vitesse, rythme adaptatif pour les mots difficiles et les
   parenthèses, navigation et contexte réglables ;
+- lecture à voix haute locale facultative, dont les frontières de mots
+  synchronisent la voix et l’affichage RSVP à la vitesse choisie ;
 - détection locale des notations mathématiques, affichées comme des captures
   fidèles du PDF plutôt que comme une transcription incertaine ;
 - extraction des numéros d'équation courants comme `(2.4)`, `(A.3a)`, `[4.2]`
@@ -223,8 +225,9 @@ consentements séparés.
 
 Les permissions servent à créer le menu contextuel, lire l'onglet actif,
 capturer visuellement la page, ouvrir et mémoriser la fenêtre RSVP, conserver
-les réglages et copier une équation dans le presse-papiers. Les autorisations
-`file://`, `http://` et `https://` permettent d'accéder au PDF sélectionné.
+les réglages, synthétiser la parole avec une voix système locale et copier une
+équation dans le presse-papiers. Les autorisations `file://`, `http://` et
+`https://` permettent d'accéder au PDF sélectionné.
 
 ## Compatibilité Firefox
 

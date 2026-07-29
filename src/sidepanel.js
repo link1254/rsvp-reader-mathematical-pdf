@@ -35,18 +35,31 @@ import {
   setUiLanguage,
   t
 } from './i18n.js';
+import {
+  AUTOMATIC_SPEECH_VOICE,
+  buildSpeechChunk,
+  detectSpeechLocale,
+  localSpeechVoices,
+  selectSpeechVoice,
+  speechItemIndexAtBoundary,
+  speechRateFromWpm
+} from './speech-playback.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
+const speechApi = api?.tts;
 const extensionStorage = api?.storage?.local ?? {
   get: async () => ({}),
   set: async () => {}
 };
 const $ = selector => document.querySelector(selector);
-const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
+const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', speechEnabled: false, speechVoiceName: AUTOMATIC_SPEECH_VOICE, fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
 let selectionLoadId = 0;
 let selectionAbortController = null;
 let feedbackController = null;
 let currentEquationScale = 1;
+let speechRunId = 0;
+let speechVoices = [];
+let speechRunActive = false;
 
 function restoreWaitingUi() {
   $('#waiting h1').textContent = t('selectPassage');
@@ -205,9 +218,56 @@ function applyContextLayout() {
   viewport.classList.toggle('context-horizontal', stableHorizontalContextEnabled());
 }
 
+function speechPlaybackAvailable() {
+  return Boolean(
+    speechApi?.speak
+    && speechApi?.stop
+    && localSpeechVoices(speechVoices).length
+  );
+}
+
+function renderSpeechVoiceOptions() {
+  const select = $('#speechVoice');
+  const checkbox = $('#speechEnabled');
+  const status = $('#speechStatus');
+  const localVoices = localSpeechVoices(speechVoices);
+  const automatic = document.createElement('option');
+  automatic.value = AUTOMATIC_SPEECH_VOICE;
+  automatic.textContent = t('automaticLocalVoice');
+  const options = localVoices.map(voice => {
+    const option = document.createElement('option');
+    option.value = voice.voiceName;
+    option.textContent = voice.lang
+      ? `${voice.voiceName} (${voice.lang})`
+      : voice.voiceName;
+    return option;
+  });
+  select.replaceChildren(automatic, ...options);
+  if (!localVoices.some(voice => voice.voiceName === state.speechVoiceName)) {
+    state.speechVoiceName = AUTOMATIC_SPEECH_VOICE;
+  }
+  select.value = state.speechVoiceName;
+  checkbox.checked = state.speechEnabled;
+  checkbox.disabled = !speechPlaybackAvailable();
+  select.disabled = !speechPlaybackAvailable() || !state.speechEnabled;
+  status.classList.toggle('hidden', speechPlaybackAvailable());
+  status.textContent = t('speechUnavailable');
+}
+
+async function refreshSpeechVoices() {
+  try {
+    speechVoices = await speechApi?.getVoices?.() || [];
+  } catch (error) {
+    console.warn(error);
+    speechVoices = [];
+  }
+  renderSpeechVoiceOptions();
+}
+
 function applyLanguage() {
   setUiLanguage(state.uiLanguage);
   applyDocumentTranslations(document);
+  renderSpeechVoiceOptions();
   if (state.items.length) {
     renderParagraphOverview();
     render();
@@ -335,11 +395,160 @@ function render() {
   $('#paragraphText [data-index].active')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
 }
 
-function pause() { state.playing = false; clearTimeout(state.timer); $('#play').textContent = '▶'; }
-function play() { if (!state.items.length) return; state.playing = true; $('#play').textContent = '❚❚'; schedule(); }
+function stopSpeechPlayback() {
+  speechRunId++;
+  clearTimeout(state.timer);
+  if (speechRunActive) {
+    speechRunActive = false;
+    speechApi?.stop?.();
+  }
+}
+
+function scheduleSpeechFallback(runId, chunk, position = 0) {
+  clearTimeout(state.timer);
+  if (runId !== speechRunId || !state.playing || position >= chunk.entries.length - 1) return;
+  const currentEntry = chunk.entries[position];
+  state.timer = setTimeout(() => {
+    if (runId !== speechRunId || !state.playing) return;
+    const nextPosition = position + 1;
+    state.index = chunk.entries[nextPosition].index;
+    render();
+    scheduleSpeechFallback(runId, chunk, nextPosition);
+  }, readingDelay(state.items[currentEntry.index], state.wpm, 'off'));
+}
+
+function finishSpeechChunk(runId, chunk) {
+  if (runId !== speechRunId || !state.playing) return;
+  speechRunActive = false;
+  clearTimeout(state.timer);
+  const nextIndex = chunk.endIndex + 1;
+  if (nextIndex >= state.items.length) {
+    state.index = chunk.endIndex;
+    render();
+    pause();
+    return;
+  }
+  state.index = nextIndex;
+  render();
+  schedule();
+}
+
+function failSpeechPlayback(runId, error) {
+  if (runId !== speechRunId || !state.playing) return;
+  console.warn(error);
+  speechRunId++;
+  speechApi?.stop?.();
+  speechRunActive = false;
+  state.speechEnabled = false;
+  renderSpeechVoiceOptions();
+  save();
+  schedule();
+}
+
+function startSpeechPlayback() {
+  stopSpeechPlayback();
+  if (!state.playing) return;
+  const item = state.items[state.index];
+  if (item?.type === 'equation') {
+    if (state.equationMode === 'manual') {
+      pause();
+      return;
+    }
+    const runId = speechRunId;
+    state.timer = setTimeout(() => {
+      if (runId !== speechRunId || !state.playing) return;
+      if (state.index >= state.items.length - 1) {
+        pause();
+        return;
+      }
+      state.index++;
+      render();
+      schedule();
+    }, readingDelay(item, state.wpm, state.adaptivePacing));
+    return;
+  }
+
+  const chunk = buildSpeechChunk(state.items, state.index);
+  if (!chunk.text || !chunk.entries.length) {
+    state.timer = setTimeout(() => {
+      if (state.index >= state.items.length - 1) pause();
+      else {
+        state.index++;
+        render();
+        schedule();
+      }
+    }, readingDelay(item, state.wpm, state.adaptivePacing));
+    return;
+  }
+
+  const runId = speechRunId;
+  const locale = detectSpeechLocale(chunk.text, getUiLanguage());
+  const voice = selectSpeechVoice(
+    speechVoices,
+    state.speechVoiceName,
+    locale
+  );
+  let boundaryReceived = false;
+  const options = {
+    lang: voice?.lang || locale,
+    rate: speechRateFromWpm(state.wpm),
+    enqueue: false,
+    desiredEventTypes: ['start', 'word', 'end', 'error'],
+    onEvent: event => {
+      if (runId !== speechRunId || !state.playing) return;
+      if (event.type === 'start') {
+        scheduleSpeechFallback(runId, chunk);
+      } else if (event.type === 'word') {
+        boundaryReceived = true;
+        clearTimeout(state.timer);
+        const itemIndex = speechItemIndexAtBoundary(chunk.entries, event.charIndex);
+        if (itemIndex !== null && itemIndex !== state.index) {
+          state.index = itemIndex;
+          render();
+        }
+      } else if (event.type === 'end') {
+        finishSpeechChunk(runId, chunk);
+      } else if (event.type === 'error') {
+        failSpeechPlayback(runId, event.errorMessage || t('speechUnavailable'));
+      }
+    }
+  };
+  if (voice?.voiceName) options.voiceName = voice.voiceName;
+
+  speechRunActive = true;
+  try {
+    Promise.resolve(speechApi.speak(chunk.text, options))
+      .catch(error => failSpeechPlayback(runId, error));
+  } catch (error) {
+    failSpeechPlayback(runId, error);
+  }
+
+  setTimeout(() => {
+    if (runId === speechRunId && state.playing && !boundaryReceived) {
+      scheduleSpeechFallback(runId, chunk);
+    }
+  }, Math.max(250, readingDelay(item, state.wpm, 'off')));
+}
+
+function pause() {
+  state.playing = false;
+  stopSpeechPlayback();
+  $('#play').textContent = '▶';
+}
+function play() {
+  if (!state.items.length) return;
+  state.playing = true;
+  $('#play').textContent = '❚❚';
+  schedule();
+}
 function schedule() {
   clearTimeout(state.timer);
   if (!state.playing) return;
+  if (state.speechEnabled && speechPlaybackAvailable()) {
+    startSpeechPlayback();
+    return;
+  }
+  if (speechRunActive) stopSpeechPlayback();
   const item = state.items[state.index];
   if (item.type === 'equation' && state.equationMode === 'manual') { pause(); return; }
   if (state.index >= state.items.length - 1) { pause(); return; }
@@ -507,6 +716,17 @@ $('#overviewMathMode').onchange = event => {
   render();
   save();
 };
+$('#speechEnabled').onchange = event => {
+  state.speechEnabled = event.target.checked;
+  renderSpeechVoiceOptions();
+  if (state.playing) schedule();
+  save();
+};
+$('#speechVoice').onchange = event => {
+  state.speechVoiceName = event.target.value;
+  if (state.playing && state.speechEnabled) schedule();
+  save();
+};
 $('#readerFont').onchange = event => {
   state.readerFont = applyReaderFont(document.documentElement, event.target.value);
   save();
@@ -520,7 +740,10 @@ $('#uiLanguage').onchange = event => {
   applyLanguage();
   save();
 };
-$('#settingsButton').onclick = () => $('#settings').showModal();
+$('#settingsButton').onclick = () => {
+  refreshSpeechVoices();
+  $('#settings').showModal();
+};
 $('#clear').onclick = clearSelection;
 $('#paragraphText').onclick = event => { const word = event.target.closest('[data-index]'); if (!word) return; state.index = Number(word.dataset.index); render(); if (state.playing) schedule(); };
 document.addEventListener('keydown', event => {
@@ -546,11 +769,12 @@ window.addEventListener('resize', () => {
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => applyResponsiveSizing());
 });
+window.addEventListener('pagehide', stopSpeechPlayback);
 
 async function save() {
   await extensionStorage.set({
     uiLanguage: state.uiLanguage,
-    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, overviewMathMode: state.overviewMathMode, fontSize: state.fontSize, equationImageSize: state.equationImageSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
+    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, overviewMathMode: state.overviewMathMode, speechEnabled: state.speechEnabled, speechVoiceName: state.speechVoiceName, fontSize: state.fontSize, equationImageSize: state.equationImageSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
   });
 }
 async function restore() {
@@ -567,6 +791,10 @@ async function restore() {
   state.adaptivePacing = normalizeAdaptivePacing(state.adaptivePacing);
   state.horizontalContext = state.horizontalContext === true;
   state.overviewMathMode = normalizeOverviewMathMode(state.overviewMathMode);
+  state.speechEnabled = state.speechEnabled === true;
+  state.speechVoiceName = typeof state.speechVoiceName === 'string'
+    ? state.speechVoiceName
+    : AUTOMATIC_SPEECH_VOICE;
   state.equationImageSize = normalizeEquationImageSize(state.equationImageSize);
   state.readerFont = normalizeReaderFont(state.readerFont);
   state.readerTheme = normalizeReaderTheme(state.readerTheme);
@@ -576,9 +804,11 @@ async function restore() {
   $('#wpm').value = state.wpm; $('#wpmValue').textContent = state.wpm; $('#fontSize').value = state.fontSize; $('#equationImageSize').value = state.equationImageSize; $('#equationImageSizeValue').textContent = `${state.equationImageSize} %`; $('#contextSize').value = state.contextSize; $('#horizontalContext').checked = state.horizontalContext; $('#overviewMathMode').value = state.overviewMathMode; $('#readerFont').value = state.readerFont; $('#readerTheme').value = state.readerTheme; $('#uiLanguage').value = state.uiLanguage;
   const radio = $(`[name="equationMode"][value="${state.equationMode}"]`); if (radio) radio.checked = true;
   const pacingRadio = $(`[name="adaptivePacing"][value="${state.adaptivePacing}"]`); if (pacingRadio) pacingRadio.checked = true;
+  await refreshSpeechVoices();
 }
 
 await restore();
+speechApi?.onVoicesChanged?.addListener?.(refreshSpeechVoices);
 feedbackController = initializeFeedback({
   getContext: () => {
     const payload = state.selectionPayload || {};

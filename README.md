@@ -34,6 +34,8 @@ idea useful can help test, fix, and improve it.
 - RSVP reading of text selected directly in the browser's PDF viewer, with
   adjustable speed, adaptive pacing for difficult words and parentheses,
   navigation, and passage context;
+- optional local read-aloud mode whose word-boundary events keep the spoken
+  passage and the RSVP display synchronized at the selected speed;
 - local detection of mathematical notation, displayed as faithful PDF snapshots
   instead of uncertain transcription;
 - extraction of common equation labels such as `(2.4)`, `(A.3a)`, `[4.2]`, or
@@ -217,9 +219,10 @@ private mode, data is sent to the configured relay only after validation; the
 excerpt and complete page image have separate consent controls.
 
 Permissions are used to create the context menu, inspect the active tab, capture
-the visible page, open and remember the RSVP window, store settings, and copy an
-equation to the clipboard. The `file://`, `http://`, and `https://` permissions
-allow the extension to access the selected PDF.
+the visible page, open and remember the RSVP window, store settings, synthesize
+speech with a local system voice, and copy an equation to the clipboard. The
+`file://`, `http://`, and `https://` permissions allow the extension to access
+the selected PDF.
 
 ## Firefox compatibility
 
