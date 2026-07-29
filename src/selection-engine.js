@@ -290,6 +290,24 @@ export function readingDelay(item, wpm, pacingMode = DEFAULT_ADAPTIVE_PACING) {
   return Math.round(adaptiveDelay + structuralPause);
 }
 
+export function readingDelayBeforeNextItem(
+  item,
+  nextItem,
+  wpm,
+  pacingMode = DEFAULT_ADAPTIVE_PACING
+) {
+  if (item?.type !== 'equation' && nextItem?.type === 'equation') {
+    const value = String(item?.value || '')
+      .replace(/[.!?,;:\u2026\u201d\u2019"'\u00bb)\]]+$/u, '');
+    return readingDelay({
+      ...item,
+      value,
+      paragraphEnd: false
+    }, wpm, pacingMode);
+  }
+  return readingDelay(item, wpm, pacingMode);
+}
+
 export function playbackAction({
   items,
   index,

@@ -34,6 +34,15 @@ describe('synchronized speech controls', () => {
     expect(source).toContain('rate: speechRateFromWpm(state.wpm)');
     expect(source).toContain("desiredEventTypes: ['start', 'word', 'end', 'error']");
     expect(source).toContain('scheduleSpeechFallback(runId, chunk)');
+    expect(source).toContain('scheduleSpeechEquationTransition(runId, chunk, itemIndex)');
+    expect(source).toContain('readingDelayBeforeNextItem(');
+  });
+
+  it('decodes high-resolution equations before reading begins', () => {
+    expect(source).toContain('const preloadedEquationImages = await preloadEquationImages(');
+    expect(source).toContain('equationImagePreloads = preloadedEquationImages');
+    expect(source).toContain("image.decoding = 'async'");
+    expect(source).toContain('await image.decode()');
   });
 
   it('stops speech on pause and persists both audio settings', () => {

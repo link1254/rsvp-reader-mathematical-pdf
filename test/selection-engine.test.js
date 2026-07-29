@@ -6,6 +6,7 @@ import {
   parseEquationLabel,
   playbackAction,
   readingDelay,
+  readingDelayBeforeNextItem,
   replaySentenceIndex,
   sentenceBounds,
   tokenizeDetectedProse,
@@ -109,6 +110,18 @@ describe('PDF selection engine', () => {
     expect(shortComma).toBe(300);
     expect(shortPeriod).toBe(500);
     expect(longComma).toBeGreaterThan(shortComma);
+  });
+  it('removes only the extra pause before an equation', () => {
+    const equation = { type: 'equation', value: 'x = 2' };
+    const sentence = { type: 'word', value: 'therefore.', paragraphEnd: true };
+    const longWord = { type: 'word', value: 'internationalisation:' };
+
+    expect(readingDelayBeforeNextItem(sentence, equation, 300, 'normal'))
+      .toBe(readingDelay({ type: 'word', value: 'therefore', paragraphEnd: false }, 300, 'normal'));
+    expect(readingDelayBeforeNextItem(longWord, equation, 300, 'normal'))
+      .toBe(readingDelay({ type: 'word', value: 'internationalisation' }, 300, 'normal'));
+    expect(readingDelayBeforeNextItem(sentence, { type: 'word', value: 'next' }, 300, 'normal'))
+      .toBe(readingDelay(sentence, 300, 'normal'));
   });
   it('keeps sentence and paragraph pauses fixed when WPM increases', () => {
     const sentence = { type: 'word', value: 'fin.' };

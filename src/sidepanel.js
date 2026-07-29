@@ -3,6 +3,7 @@ import {
   parseEquationLabel,
   playbackAction,
   readingDelay,
+  readingDelayBeforeNextItem,
   replaySentenceIndex,
   sentenceBounds
 } from './selection-engine.js';
@@ -71,6 +72,7 @@ let currentEquationScale = 1;
 let speechRunId = 0;
 let speechVoices = [];
 let speechRunActive = false;
+let equationImagePreloads = [];
 
 function restoreWaitingUi() {
   $('#waiting h1').textContent = t('selectPassage');
@@ -180,6 +182,23 @@ function equationImageFor(item) {
 function equationImagePixelRatioFor(item) {
   if (item?.type !== 'equation' || item.manualImage) return 1;
   return state.equationImagePixelRatios[item.equationId] || 1;
+}
+
+async function preloadEquationImages(images) {
+  const decodedImages = await Promise.all(
+    [...new Set(Object.values(images || {}))].map(async source => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.src = source;
+      try {
+        await image.decode();
+      } catch {
+        return null;
+      }
+      return image;
+    })
+  );
+  return decodedImages.filter(Boolean);
 }
 
 function renderParagraphOverview() {
@@ -493,17 +512,49 @@ function stopSpeechPlayback() {
   }
 }
 
+function equationFollowsSpeechChunk(chunk) {
+  return state.items[chunk.endIndex + 1]?.type === 'equation';
+}
+
 function scheduleSpeechFallback(runId, chunk, position = 0) {
   clearTimeout(state.timer);
-  if (runId !== speechRunId || !state.playing || position >= chunk.entries.length - 1) return;
+  if (runId !== speechRunId || !state.playing || position >= chunk.entries.length) return;
   const currentEntry = chunk.entries[position];
   state.timer = setTimeout(() => {
     if (runId !== speechRunId || !state.playing) return;
     const nextPosition = position + 1;
+    if (nextPosition >= chunk.entries.length) {
+      if (equationFollowsSpeechChunk(chunk)) finishSpeechChunk(runId, chunk);
+      return;
+    }
     state.index = chunk.entries[nextPosition].index;
     render();
     scheduleSpeechFallback(runId, chunk, nextPosition);
-  }, readingDelay(state.items[currentEntry.index], state.wpm, 'off'));
+  }, readingDelayBeforeNextItem(
+    state.items[currentEntry.index],
+    nextPosition >= chunk.entries.length
+      ? state.items[chunk.endIndex + 1]
+      : state.items[chunk.entries[nextPosition].index],
+    state.wpm,
+    'off'
+  ));
+}
+
+function scheduleSpeechEquationTransition(runId, chunk, itemIndex) {
+  const lastEntry = chunk.entries.at(-1);
+  if (
+    itemIndex !== lastEntry?.index
+    || !equationFollowsSpeechChunk(chunk)
+  ) return;
+  clearTimeout(state.timer);
+  state.timer = setTimeout(() => {
+    finishSpeechChunk(runId, chunk);
+  }, readingDelayBeforeNextItem(
+    state.items[itemIndex],
+    state.items[chunk.endIndex + 1],
+    state.wpm,
+    state.adaptivePacing
+  ));
 }
 
 function finishSpeechChunk(runId, chunk) {
@@ -595,6 +646,9 @@ function startSpeechPlayback() {
           state.index = itemIndex;
           render();
         }
+        if (itemIndex !== null) {
+          scheduleSpeechEquationTransition(runId, chunk, itemIndex);
+        }
       } else if (event.type === 'end') {
         finishSpeechChunk(runId, chunk);
       } else if (event.type === 'error') {
@@ -641,7 +695,16 @@ function schedule() {
   const item = state.items[state.index];
   if (item.type === 'equation' && state.equationMode === 'manual') { pause(); return; }
   if (state.index >= state.items.length - 1) { pause(); return; }
-  state.timer = setTimeout(() => { state.index++; render(); schedule(); }, readingDelay(item, state.wpm, state.adaptivePacing));
+  state.timer = setTimeout(() => {
+    state.index++;
+    render();
+    schedule();
+  }, readingDelayBeforeNextItem(
+    item,
+    state.items[state.index + 1],
+    state.wpm,
+    state.adaptivePacing
+  ));
 }
 function move(delta) { state.index = Math.max(0, Math.min(state.items.length - 1, state.index + delta)); render(); if (state.playing) schedule(); }
 function replaySentence() {
@@ -661,6 +724,7 @@ async function loadSelection(payload) {
   state.index = 0;
   state.equationImages = {};
   state.equationImagePixelRatios = {};
+  equationImagePreloads = [];
   state.equationLookupComplete = false;
   state.selectionPayload = payload;
   state.pageNumber = null;
@@ -684,6 +748,9 @@ async function loadSelection(payload) {
     state.items = result.items;
     state.equationImages = result.images || {};
     state.equationImagePixelRatios = result.imagePixelRatios || {};
+    const preloadedEquationImages = await preloadEquationImages(state.equationImages);
+    if (loadId !== selectionLoadId) return;
+    equationImagePreloads = preloadedEquationImages;
     state.pageCapture = result.pageCapture || state.pageCapture || null;
     state.pageNumber = result.pageNumber || null;
     state.equationLookupComplete = true;
@@ -729,6 +796,7 @@ function clearSelection() {
   state.items = [];
   state.equationImages = {};
   state.equationImagePixelRatios = {};
+  equationImagePreloads = [];
   state.selectionPayload = null;
   state.pageCapture = null;
   state.pageNumber = null;
