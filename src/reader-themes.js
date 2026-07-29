@@ -2,7 +2,8 @@ export const DEFAULT_READER_THEME = 'classic';
 
 export const READER_THEMES = Object.freeze([
   'classic',
-  'minimal'
+  'minimal',
+  'eliot'
 ]);
 
 export function normalizeReaderTheme(value) {

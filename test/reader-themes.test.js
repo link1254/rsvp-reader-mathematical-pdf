@@ -21,8 +21,8 @@ const stylesheet = readFileSync(
 );
 
 describe('reader themes', () => {
-  it('provides the classic and minimal choices in settings', () => {
-    expect(READER_THEMES).toEqual(['classic', 'minimal']);
+  it('provides every reader theme in settings', () => {
+    expect(READER_THEMES).toEqual(['classic', 'minimal', 'eliot']);
     for (const value of READER_THEMES) {
       expect(html).toContain(`value="${value}"`);
     }
@@ -40,5 +40,14 @@ describe('reader themes', () => {
     expect(source).toContain('readerTheme: state.readerTheme');
     expect(source).toContain("$('#readerTheme').value = state.readerTheme");
     expect(stylesheet).toContain('[data-reader-theme="minimal"]');
+  });
+
+  it('applies the Eliot theme', () => {
+    const root = { dataset: {} };
+
+    expect(applyReaderTheme(root, 'eliot')).toBe('eliot');
+    expect(root.dataset.readerTheme).toBe('eliot');
+    expect(stylesheet).toContain(':root[data-reader-theme="eliot"]');
+    expect(stylesheet).toContain('color-scheme:light');
   });
 });

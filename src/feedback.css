@@ -24,4 +24,12 @@ header .feedback-button{border:1px solid var(--line);border-radius:6px;backgroun
 [data-reader-theme="minimal"] header .feedback-button{border-radius:2px;background:#202328}
 [data-reader-theme="minimal"] .feedback-dialog textarea{border-radius:2px;background:#24272c}
 [data-reader-theme="minimal"] .feedback-preview pre{background:#101215}
+[data-reader-theme="eliot"] header .feedback-button{background:#faf9fa;color:#4e4951}
+[data-reader-theme="eliot"] .feedback-dialog textarea{background:#f4f2f4;color:#343138}
+[data-reader-theme="eliot"] .feedback-options label{color:#343138}
+[data-reader-theme="eliot"] .feedback-preview pre{background:#f2f1f3;color:#4e4951}
+[data-reader-theme="eliot"] .feedback-actions #feedbackSend{background:#d685a2;color:#332128}
+[data-reader-theme="eliot"] .feedback-status[data-kind="error"]{color:#a82f50}
+[data-reader-theme="eliot"] .feedback-status[data-kind="warning"]{color:#8a5a12}
+[data-reader-theme="eliot"] .feedback-status[data-kind="success"]{color:#36734a}
 @media (max-width:599px){header .feedback-button{padding:6px}.feedback-actions{display:grid;grid-template-columns:1fr 1fr}.feedback-actions #feedbackSend{grid-column:1/-1}}

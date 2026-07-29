@@ -239,6 +239,16 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 4. Le choix est appliqué immédiatement, enregistré dans `chrome.storage.local`
    et restauré aux utilisations suivantes.
 
+## Thème Eliot de la branche bêta
+
+1. Les réglages proposent aussi le thème clair `Eliot`.
+2. La palette emploie un fond gris perle, des surfaces blanches non agressives,
+   un texte anthracite et des accents rose sakura.
+3. Les équations, l’aperçu du passage, les réglages et les fenêtres de dialogue
+   disposent de variantes claires cohérentes, sans changer leur disposition.
+4. Le choix utilise la même préférence persistante que les thèmes `Classique`
+   et `Minimal`.
+
 ## Sélections sans espaces de la version 0.15.16
 
 1. Certains passages transmis par Edge concatènent presque tous les mots, par

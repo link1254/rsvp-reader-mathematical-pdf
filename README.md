@@ -47,7 +47,7 @@ idea useful can help test, fix, and improve it.
   copying when needed;
 - visible progress during PDF analysis and an optional, privacy-reviewed problem
   report;
-- dyslexia-friendly fonts, two interface themes, and a resizable reader whose
+- dyslexia-friendly fonts, three interface themes, and a resizable reader whose
   content and dimensions adapt between sessions;
 - French and English interfaces, selected automatically from the browser
   language or explicitly in the reader settings;

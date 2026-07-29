@@ -11,3 +11,13 @@
 [data-reader-theme="minimal"] .source .capture-button{border-radius:2px;background:#202328}
 [data-reader-theme="minimal"] .crop-dialog footer button{border-radius:2px;background:#24272c}
 [data-reader-theme="minimal"] .equation-card:has(.equation-snapshot:not(.hidden)){background:#f4f4f2}
+[data-reader-theme="eliot"] .equation-snapshot{border:1px solid #e4e1e4;border-radius:3px}
+[data-reader-theme="eliot"] .equation-label{color:#5b3644}
+[data-reader-theme="eliot"] .source .capture-button{border-color:#d5d2d7;border-radius:6px;background:#faf9fa;color:#5f5b63}
+[data-reader-theme="eliot"] .source .capture-button:disabled{border-color:#dca8ba;color:#98415f}
+[data-reader-theme="eliot"] .crop-dialog p{color:#706b73}
+[data-reader-theme="eliot"] .crop-dialog footer button{border-color:#d5d2d7;border-radius:6px;background:#f2f1f3;color:#343138}
+[data-reader-theme="eliot"] .crop-dialog footer #applyCrop{background:#d685a2;color:#332128}
+[data-reader-theme="eliot"] .equation-card:has(.equation-snapshot:not(.hidden)){background:#f7ecef}
+[data-reader-theme="eliot"] .equation-card #manualCaptureEquation{background:#f8e4eb;color:#5b2d3e}
+[data-reader-theme="eliot"] .equation-card .copy-equation-image{background:#ece9ed;color:#3f3a42}
