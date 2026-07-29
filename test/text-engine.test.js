@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { cleanText, segmentText, flattenSentences, orpIndex, delayFor } from '../src/text-engine.js';
 
 describe('scientific text engine', () => {
-  it('repairs PDF line hyphenation', () => expect(cleanText('reconnais-\nsance')).toBe('reconnaissance'));
+  it('repairs PDF line hyphenation without flattening an intentional compound', () => {
+    expect(cleanText('reconnais-\nsance')).toBe('reconnaissance');
+    expect(cleanText('well-\nknown')).toBe('well-known');
+  });
   it('segments sentences and tokens', () => {
     const sentences = segmentText('Le chat avance. Puis il dort !');
     expect(sentences).toHaveLength(2);

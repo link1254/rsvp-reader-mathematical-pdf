@@ -509,4 +509,54 @@ describe('visual PDF selection layout', () => {
       paragraphEnd: false
     }]);
   });
+
+  it('reconstructs a word hyphenated between adjacent PDF lines', () => {
+    const first = {
+      ...item('called the Lagrange equa-', 10, 150, 500),
+      hasEOL: true
+    };
+    const second = item('tions. The principle follows.', 10, 170, 488);
+    const selection = {
+      start: 0,
+      end: 1,
+      startChar: 0,
+      endChar: second.str.length
+    };
+
+    const segments = buildSelectionSegments(
+      [first, second],
+      viewport,
+      [],
+      selection
+    );
+
+    expect(segments).toEqual([{
+      type: 'text',
+      value: 'called the Lagrange equations. The principle follows.',
+      paragraphEnd: false
+    }]);
+  });
+
+  it('keeps an intentional compound on one token across PDF lines', () => {
+    const first = {
+      ...item('a well-', 10, 80, 500),
+      hasEOL: true
+    };
+    const second = item('known result', 10, 90, 488);
+    const selection = {
+      start: 0,
+      end: 1,
+      startChar: 0,
+      endChar: second.str.length
+    };
+
+    const segments = buildSelectionSegments(
+      [first, second],
+      viewport,
+      [],
+      selection
+    );
+
+    expect(segments[0].value).toBe('a well-known result');
+  });
 });

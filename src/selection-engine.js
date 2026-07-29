@@ -1,3 +1,5 @@
+import { repairLineHyphenation } from './word-normalization.js';
+
 const MATH_OPERATOR = /^(?:=|≡|≈|≠|≤|≥|<|>|±|∝|→|↦)$/;
 const MATH_ATOM = /^(?:(?:[A-Za-zΑ-ω]{1,3}|[A-Za-zΑ-ω]+[₀-₉ₐ-ₜ⁰¹²³⁴⁵⁶⁷⁸⁹\d]+)|[+−-]?(?:\d+(?:[.,]\d+)?|∞)(?:[²³⁰¹⁴⁵⁶⁷⁸⁹])?|[∑∫∏√∞∂∇□][^\s]*)[.,;:]?$/;
 const TEX_COMMAND = /\\(?:frac|sqrt|sum|int|prod|lim|begin|end|alpha|beta|gamma|theta|lambda|sigma|omega)\b/;
@@ -207,9 +209,8 @@ function splitNumberedEquations(line) {
 }
 
 export function tokenizeSelection(text) {
-  const normalized = text.normalize('NFC')
+  const normalized = repairLineHyphenation(text.normalize('NFC'))
     .replace(/\u0003/g, '□')
-    .replace(/([a-zà-ÿ])-\s*\n\s*([a-zà-ÿ])/gi, '$1$2')
     .trim();
   if (!normalized) return [];
   // Edge place souvent le numéro d'équation sur une ligne séparée. On analyse

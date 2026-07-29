@@ -1,3 +1,5 @@
+import { joinHyphenatedFragments } from './word-normalization.js';
+
 export const AUTOMATIC_SPEECH_VOICE = 'auto';
 export const DEFAULT_SPEECH_RATE_WPM = 200;
 export const MAX_SPEECH_CHUNK_CHARACTERS = 1000;
@@ -37,11 +39,27 @@ export function buildSpeechChunk(
   const start = Math.max(0, Math.min(items.length - 1, Number(startIndex) || 0));
   const entries = [];
   let text = '';
+  let endIndex = start - 1;
+  let lastEntryValue = '';
   for (let index = start; index < items.length; index++) {
     const item = items[index];
     if (item?.type === 'equation') break;
     const value = String(item?.value || '').trim();
     if (!value) continue;
+    const joined = entries.length
+      ? joinHyphenatedFragments(lastEntryValue, value)
+      : null;
+    if (joined !== null) {
+      const previousEntry = entries.at(-1);
+      const joinedText = `${text.slice(0, previousEntry.start)}${joined}`;
+      if (joinedText.length > maxCharacters) break;
+      text = joinedText;
+      previousEntry.end = text.length;
+      lastEntryValue = joined;
+      endIndex = index;
+      if (item.paragraphEnd === true) break;
+      continue;
+    }
     const separator = text ? ' ' : '';
     if (entries.length && text.length + separator.length + value.length > maxCharacters) break;
     const characterStart = text.length + separator.length;
@@ -51,6 +69,8 @@ export function buildSpeechChunk(
       start: characterStart,
       end: characterStart + value.length
     });
+    lastEntryValue = value;
+    endIndex = index;
     if (item.paragraphEnd === true) break;
   }
 
@@ -58,7 +78,7 @@ export function buildSpeechChunk(
     text,
     entries,
     startIndex: entries[0]?.index ?? start,
-    endIndex: entries.at(-1)?.index ?? start - 1
+    endIndex
   };
 }
 

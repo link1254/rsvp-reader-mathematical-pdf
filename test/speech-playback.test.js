@@ -48,6 +48,23 @@ describe('synchronized speech playback', () => {
     expect(speechItemIndexAtBoundary(entries, 11)).toBe(2);
   });
 
+  it('speaks a residual PDF line hyphenation as one complete word', () => {
+    const chunk = buildSpeechChunk([
+      { value: 'Lagrange', type: 'word' },
+      { value: 'equa-', type: 'word' },
+      { value: 'tions.', type: 'word' },
+      { value: 'continue', type: 'word' }
+    ], 0);
+
+    expect(chunk.text).toBe('Lagrange equations. continue');
+    expect(chunk.entries).toEqual([
+      { index: 0, start: 0, end: 8 },
+      { index: 1, start: 9, end: 19 },
+      { index: 3, start: 20, end: 28 }
+    ]);
+    expect(chunk.endIndex).toBe(3);
+  });
+
   it('detects French and English passages independently from the interface', () => {
     expect(detectSpeechLocale('The system is defined by the equation.', 'fr')).toBe('en-US');
     expect(detectSpeechLocale('Le système est défini par cette équation.', 'en')).toBe('fr-FR');

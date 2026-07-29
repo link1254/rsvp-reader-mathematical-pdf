@@ -1,4 +1,5 @@
 import { parseEquationLabel } from './selection-engine.js';
+import { joinHyphenatedFragments } from './word-normalization.js';
 
 function comparableCharacters(value, itemIndex = null) {
   const entries = [];
@@ -608,11 +609,20 @@ function regionForCharacter(regions, rect, x) {
     })[0] || null;
 }
 
-function appendText(segments, value, itemIndex) {
+function appendText(segments, value, itemIndex, { lineBreak = false } = {}) {
   if (!value) return;
   const last = segments.at(-1);
   if (last?.type === 'text' && !last.paragraphEnd) {
-    if (last.itemIndex !== itemIndex
+    const startsNewItem = last.itemIndex !== itemIndex;
+    const joined = startsNewItem && lineBreak
+      ? joinHyphenatedFragments(last.value, value)
+      : null;
+    if (joined !== null) {
+      last.value = joined;
+      last.itemIndex = itemIndex;
+      return;
+    }
+    if (startsNewItem
       && !/\s$/.test(last.value)
       && !/^\s/.test(value)
       && !/^[,.;:!?)}\]]/.test(value)
@@ -779,7 +789,9 @@ export function buildSelectionSegments(items, viewport, regions, selection) {
           emittedRegions.add(region);
         }
       } else {
-        appendText(segments, symbol, itemIndex);
+        appendText(segments, symbol, itemIndex, {
+          lineBreak: previousItem?.hasEOL === true
+        });
       }
       offset += symbol.length;
     }

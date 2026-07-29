@@ -62,6 +62,10 @@ describe('PDF selection engine', () => {
   it('keeps ordinary prose word by word', () => {
     expect(tokenizeSelection('Le résultat est important.').map(item => item.value)).toEqual(['Le', 'résultat', 'est', 'important.']);
   });
+  it('reconstructs a word hyphenated across two selected PDF lines', () => {
+    expect(tokenizeSelection('the Lagrange equa-\ntions are useful').map(item => item.value))
+      .toEqual(['the', 'Lagrange', 'equations', 'are', 'useful']);
+  });
   it('does not turn a scientific paragraph into one giant equation', () => {
     const text = 'In particular the spectrum extends from E = −∞ to E = +∞. The existence of unbounded negative energies leads to instabilities.';
     const items = tokenizeSelection(text);

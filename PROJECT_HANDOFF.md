@@ -405,6 +405,11 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 8. Si une voix ne produit pas d’événements de mots, le minuteur RSVP sert de
    solution de repli. En cas d’erreur du moteur vocal, l’audio est désactivé et
    la lecture visuelle continue.
+9. Les césures typographiques de fin de ligne sont reconstruites avant la
+   tokenisation (`equa-` + `tions` devient `equations`). Le générateur audio
+   applique la même réparation en dernier recours pour ne jamais prononcer les
+   deux fragments séparément ; les composés usuels comme `well-known` gardent
+   leur trait d’union et restent une seule unité vocale.
 
 ## Corrections importantes des versions 0.13.0 à 0.13.5
 

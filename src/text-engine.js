@@ -1,9 +1,9 @@
+import { repairLineHyphenation } from './word-normalization.js';
+
 const MATH_RE = /(?:\\(?:frac|sqrt|sum|int|lim|alpha|beta|gamma|theta|lambda|mu|sigma|omega)\b|[∑∫√∞≈≠≤≥±×÷∂∇]|[A-Za-z]\s*[=<>]\s*[^,.;:!?]+)/;
 
 export function cleanText(text) {
-  return text
-    .normalize('NFC')
-    .replace(/([a-zà-ÿ])-\s*\n\s*([a-zà-ÿ])/gi, '$1$2')
+  return repairLineHyphenation(text.normalize('NFC'))
     .replace(/[ \t]+/g, ' ')
     .replace(/\s*\n\s*/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
