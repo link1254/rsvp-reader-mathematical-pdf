@@ -18,9 +18,9 @@
 [data-reader-theme="minimal"] .overview-title{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
 [data-reader-theme="minimal"] .overview-title small{font-size:10px;text-transform:none;letter-spacing:0;white-space:nowrap}
 [data-reader-theme="minimal"] .paragraph-text{max-height:96px;overflow:auto;padding:8px 10px;border:1px solid var(--line);border-radius:2px;background:#101215;line-height:1.8;scrollbar-width:thin}
-[data-reader-theme="minimal"] .paragraph-text button{border:0;border-radius:1px;background:transparent;color:#aeb8d1;padding:2px 3px;font-size:12px;cursor:pointer}
+[data-reader-theme="minimal"] .paragraph-text button{border:0;border-radius:1px;background:transparent;color:#aeb8d1;padding:2px 3px;font-size:12px;font-weight:400;line-height:inherit;cursor:pointer}
 [data-reader-theme="minimal"] .paragraph-text button.math{font-family:'Cambria Math',serif;color:#ffd780}
-[data-reader-theme="minimal"] .paragraph-text button.active{background:#d6aa51;color:#111827;font-weight:800;box-shadow:none}
+[data-reader-theme="minimal"] .paragraph-text button.active{background:#d6aa51;color:#111827;box-shadow:none}
 #settings{max-height:calc(100vh - 30px);overflow:auto}.pacing-setting{display:grid;gap:8px;margin:0;padding:0;border:0}.pacing-setting legend{padding:0;color:var(--muted);font-size:12px}.pacing-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--line);border-radius:8px;overflow:hidden}.pacing-options label{display:block}.pacing-options input{position:absolute;opacity:0;pointer-events:none}.pacing-options span{display:grid;place-items:center;min-height:36px;padding:6px;border-right:1px solid var(--line);color:var(--muted);font-size:11px;text-align:center;cursor:pointer}.pacing-options label:last-child span{border-right:0}.pacing-options input:checked+span{background:var(--brand);color:#111827;font-weight:800}.pacing-options input:focus-visible+span{outline:2px solid #fff;outline-offset:-3px}
 .speech-setting{display:grid;gap:10px;margin:0;padding:0;border:0}.speech-setting legend{padding:0;color:var(--muted);font-size:12px}.speech-setting select:disabled{cursor:not-allowed;opacity:.55}.setting-status{color:#ffbd75;font-size:11px;line-height:1.4}
 .speed .speech-toggle{grid-column:1/-1;justify-self:center;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:132px;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:6px;background:#ffffff09;color:var(--muted);font-weight:700}.speed .speech-toggle[aria-pressed="true"]{border-color:var(--brand);background:var(--brand);color:#111936}.speed .speech-toggle:disabled{cursor:not-allowed;opacity:.5}
@@ -37,9 +37,9 @@
 .overview-title{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
 .overview-title small{font-size:10px;text-transform:none;letter-spacing:0;white-space:nowrap}
 .paragraph-text{max-height:96px;overflow:auto;padding:8px 10px;border-radius:9px;background:#050a1488;line-height:1.8;scrollbar-width:thin}
-.paragraph-text button{border:0;border-radius:4px;background:transparent;color:#aeb8d1;padding:2px 3px;font-size:12px;cursor:pointer}
+.paragraph-text button{box-sizing:border-box;border:0;border-radius:4px;background:transparent;color:#aeb8d1;padding:2px 3px;font-size:12px;font-weight:400;line-height:inherit;cursor:pointer}
 .paragraph-text button.math{font-family:'Cambria Math',serif;color:#ffd780}
-.paragraph-text button.active{background:#ffd95b;color:#111827;font-weight:800;box-shadow:0 0 0 2px #ffd95b33}
+.paragraph-text button.active{background:#ffd95b;color:#111827;box-shadow:0 0 0 2px #ffd95b33}
 .paragraph-text button.math-preview{display:inline-flex;align-items:center;justify-content:center;min-width:calc(34px * var(--equation-scale));min-height:calc(28px * var(--equation-scale));padding:2px 4px;border:1px solid #d6b96e;background:#f7f4ed;vertical-align:middle}
 .paragraph-text button.math-preview img{display:block;width:auto;height:auto;max-width:calc(120px * var(--equation-scale));max-height:calc(24px * var(--equation-scale));object-fit:contain}
 .paragraph-text button.math-preview.active{border-color:#ffd95b;background:#ffd95b}

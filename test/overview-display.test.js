@@ -36,4 +36,12 @@ describe('passage overview mathematics display', () => {
     expect(stylesheet).toContain('.paragraph-text button.math-preview img');
     expect(stylesheet).toContain('max-height:calc(24px * var(--equation-scale))');
   });
+
+  it('keeps the active reading guide from changing word dimensions', () => {
+    expect(stylesheet).toContain(
+      '.paragraph-text button{box-sizing:border-box;border:0'
+    );
+    expect(stylesheet).toContain('font-weight:400;line-height:inherit;cursor:pointer');
+    expect(stylesheet).not.toMatch(/paragraph-text button\.active\{[^}]*font-weight/);
+  });
 });
