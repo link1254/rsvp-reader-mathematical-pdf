@@ -18,6 +18,10 @@ const stylesheet = readFileSync(
   new URL('../src/sidepanel.css', import.meta.url),
   'utf8'
 );
+const horizontalStylesheet = readFileSync(
+  new URL('../src/horizontal.css', import.meta.url),
+  'utf8'
+);
 
 describe('passage overview mathematics display', () => {
   it('offers labels and previews while defaulting to labels', () => {
@@ -43,5 +47,9 @@ describe('passage overview mathematics display', () => {
     );
     expect(stylesheet).toContain('font-weight:400;line-height:inherit;cursor:pointer');
     expect(stylesheet).not.toMatch(/paragraph-text button\.active\{[^}]*font-weight/);
+    expect(horizontalStylesheet)
+      .toContain('font-weight:400;line-height:inherit;cursor:pointer');
+    expect(horizontalStylesheet)
+      .not.toMatch(/paragraph-text button\.active\{[^}]*font-weight/);
   });
 });

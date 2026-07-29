@@ -3,6 +3,7 @@ import { t } from './i18n.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 const MODEL_PATH = 'models/pix2text-mfd-1.5.onnx';
+export const MODEL_SIZE_BYTES = 80_311_115;
 const WASM_MODULE_PATH = 'models/ort-wasm-simd-threaded.mjs';
 const WASM_PATH = 'models/ort-wasm-simd-threaded.wasm';
 const MODEL_WIDTH = 768;
@@ -11,6 +12,7 @@ const DEFAULT_CONFIDENCE = .8;
 const NMS_THRESHOLD = .45;
 
 let sessionPromise = null;
+let sessionReady = false;
 let inferenceTail = Promise.resolve();
 
 function extensionUrl(path) {
@@ -103,26 +105,130 @@ function canvasTensor(canvas) {
   };
 }
 
-async function loadSession() {
+export async function responseArrayBufferWithProgress(
+  response,
+  onProgress = () => {},
+  expectedBytes = null
+) {
+  const headerValue = Number(response.headers?.get?.('content-length'));
+  const expectedValue = Number(expectedBytes);
+  const total = Number.isFinite(headerValue) && headerValue > 0
+    ? headerValue
+    : (Number.isFinite(expectedValue) && expectedValue > 0
+        ? expectedValue
+        : null);
+  if (!response.body?.getReader) {
+    const buffer = await response.arrayBuffer();
+    onProgress({
+      loaded: buffer.byteLength,
+      total: total || buffer.byteLength
+    });
+    return buffer;
+  }
+
+  const reader = response.body.getReader();
+  const chunks = [];
+  let bytes = total ? new Uint8Array(total) : null;
+  let loaded = 0;
+  let lastReportedUnit = -1;
+  let lastReportedLoaded = -1;
+  const report = force => {
+    const unit = total
+      ? Math.floor(Math.min(1, loaded / total) * 100)
+      : Math.floor(loaded / 1_048_576);
+    if (!force && unit === lastReportedUnit) return;
+    if (force && loaded === lastReportedLoaded) return;
+    lastReportedUnit = unit;
+    lastReportedLoaded = loaded;
+    onProgress({ loaded, total });
+  };
+  report(true);
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value?.byteLength) continue;
+    if (bytes && loaded + value.byteLength <= bytes.byteLength) {
+      bytes.set(value, loaded);
+    } else {
+      if (bytes) {
+        chunks.push(bytes.subarray(0, loaded));
+        bytes = null;
+      }
+      chunks.push(value);
+    }
+    loaded += value.byteLength;
+    report(false);
+  }
+  report(true);
+
+  if (bytes) {
+    return loaded === bytes.byteLength
+      ? bytes.buffer
+      : bytes.slice(0, loaded).buffer;
+  }
+  bytes = new Uint8Array(loaded);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes.buffer;
+}
+
+async function withElapsedProgress(stage, onProgress, operation) {
+  const startedAt = Date.now();
+  const report = () => onProgress(stage, {
+    elapsedMs: Date.now() - startedAt
+  });
+  report();
+  const timer = setInterval(report, 250);
+  try {
+    return await operation();
+  } finally {
+    clearInterval(timer);
+    report();
+  }
+}
+
+async function loadSession(onProgress = () => {}) {
   if (!sessionPromise) {
     ort.env.wasm.numThreads = 1;
     ort.env.wasm.wasmPaths = {
       mjs: extensionUrl(WASM_MODULE_PATH),
       wasm: extensionUrl(WASM_PATH)
     };
-    sessionPromise = fetch(extensionUrl(MODEL_PATH))
-      .then(response => {
+    sessionPromise = (async () => {
+      const response = await fetch(extensionUrl(MODEL_PATH));
+      try {
         if (!response.ok) throw new Error(t('modelUnavailable', { status: response.status }));
-        return response.arrayBuffer();
-      })
-      .then(model => ort.InferenceSession.create(model, {
-        executionProviders: ['wasm'],
-        graphOptimizationLevel: 'all'
-      }))
+        const model = await responseArrayBufferWithProgress(
+          response,
+          progress => onProgress('model-download', progress),
+          MODEL_SIZE_BYTES
+        );
+        const session = await withElapsedProgress(
+          'model-compile',
+          onProgress,
+          () => ort.InferenceSession.create(model, {
+            executionProviders: ['wasm'],
+            graphOptimizationLevel: 'all'
+          })
+        );
+        sessionReady = true;
+        onProgress('model-ready');
+        return session;
+      } catch (error) {
+        sessionReady = false;
+        throw error;
+      }
+    })()
       .catch(error => {
         sessionPromise = null;
         throw error;
       });
+  } else if (sessionReady) {
+    onProgress('model-ready');
   }
   return sessionPromise;
 }
@@ -135,11 +241,13 @@ export async function detectMathRegions(canvas, options = {}) {
     let outputs = null;
     try {
       signal?.throwIfAborted();
-      onProgress('model');
-      const session = await loadSession();
+      const session = await loadSession(onProgress);
       signal?.throwIfAborted();
-      onProgress('inference');
-      outputs = await session.run({ images: input.tensor });
+      outputs = await withElapsedProgress(
+        'inference',
+        onProgress,
+        () => session.run({ images: input.tensor })
+      );
       signal?.throwIfAborted();
       onProgress('postprocess');
       return decodeMathRegions(outputs.output0, input.geometry, confidence)

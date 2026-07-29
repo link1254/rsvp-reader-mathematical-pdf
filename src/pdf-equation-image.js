@@ -14,7 +14,10 @@ import {
   parseEquationLabel,
   tokenizeDetectedProse
 } from './selection-engine.js';
-import { selectionSearchProgress } from './loading-progress.js';
+import {
+  detectionStageProgress,
+  selectionSearchProgress
+} from './loading-progress.js';
 import { t } from './i18n.js';
 
 const DETECTION_RENDER_SCALE = 2;
@@ -63,16 +66,20 @@ export async function renderEquationImageCanvas(
   }
 }
 
-function reportDetectionProgress(onStatus, stage) {
+function reportDetectionProgress(onStatus, stage, progress = {}) {
   const states = {
-    preparing: [t('preparingModelImage'), { value: 76 }],
-    queued: [t('waitingDetectionEngine'), { indeterminate: true }],
-    model: [t('initializingMathModel'), { indeterminate: true }],
-    inference: [t('analyzingMathNotations'), { indeterminate: true }],
-    postprocess: [t('checkingDetectedRegions'), { value: 94 }]
+    preparing: t('preparingModelImage'),
+    queued: t('waitingDetectionEngine'),
+    'model-download': t('loadingMathModel'),
+    'model-compile': t('initializingMathModel'),
+    'model-ready': t('initializingMathModel'),
+    inference: t('analyzingMathNotations'),
+    postprocess: t('checkingDetectedRegions')
   };
-  const [message, details] = states[stage] || [t('localMathAnalysisProgress'), { indeterminate: true }];
-  onStatus(message, details);
+  onStatus(
+    states[stage] || t('localMathAnalysisProgress'),
+    detectionStageProgress(stage, progress)
+  );
 }
 
 function decodeRepeatedly(value) {
@@ -443,7 +450,9 @@ export async function renderVisualSelectionFromPdf(
     const candidateRegions = await detectMathRegions(canvas, {
       confidence: .4,
       signal,
-      onProgress: stage => reportDetectionProgress(onStatus, stage)
+      onProgress: (stage, progress) => (
+        reportDetectionProgress(onStatus, stage, progress)
+      )
     });
     const detectedRegions = confirmWeakMathRegions(
       content.items,
