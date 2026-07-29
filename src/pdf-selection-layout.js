@@ -527,6 +527,122 @@ function intersectionArea(first, second) {
   return Math.max(0, right - left) * Math.max(0, bottom - top);
 }
 
+function selectionIncludesItem(selection, itemIndex, valueLength) {
+  if (!selection) return true;
+  if (itemIndex < selection.start || itemIndex > selection.end) return false;
+  if (itemIndex === selection.start && selection.startChar >= valueLength) return false;
+  if (itemIndex === selection.end && selection.endChar <= 0) return false;
+  return true;
+}
+
+function scriptPairRect(base, exponent, viewport) {
+  const baseRect = textItemRect(base, viewport);
+  const exponentRect = textItemRect(exponent, viewport);
+  const baseHeight = baseRect.height / 1.5;
+  const exponentHeight = exponentRect.height / 1.5;
+  const x = Math.min(baseRect.x, exponentRect.x);
+  const right = Math.max(
+    baseRect.x + baseRect.width,
+    exponentRect.x + exponentRect.width
+  );
+  const y = Math.min(
+    baseRect.baseline - baseHeight * 1.05,
+    exponentRect.baseline - exponentHeight * 1.05
+  );
+  const bottom = Math.max(
+    baseRect.baseline + baseHeight * .08,
+    exponentRect.baseline + exponentHeight * .24
+  );
+  return {
+    x,
+    y,
+    width: right - x,
+    height: bottom - y,
+    baseline: baseRect.baseline
+  };
+}
+
+export function supplementScriptMathRegions(
+  items,
+  viewport,
+  regions,
+  selection = null
+) {
+  const supplemented = [...regions];
+  for (let index = 0; index < items.length - 1; index++) {
+    const base = items[index];
+    const exponent = items[index + 1];
+    const baseValue = String(base?.str || '').trim();
+    const exponentValue = String(exponent?.str || '').trim();
+    if (
+      !/^[A-Z]$/u.test(baseValue)
+      || !/^[a-z]$/u.test(exponentValue)
+      || !selectionIncludesItem(selection, index, baseValue.length)
+      || !selectionIncludesItem(selection, index + 1, exponentValue.length)
+      || !base.fontName
+      || !exponent.fontName
+      || base.fontName === exponent.fontName
+    ) continue;
+
+    const baseHeight = Math.abs(Number(base.height) || 0);
+    const exponentHeight = Math.abs(Number(exponent.height) || 0);
+    const heightRatio = exponentHeight / Math.max(1, baseHeight);
+    const rise = Number(exponent.transform?.[5]) - Number(base.transform?.[5]);
+    const baseRight = Number(base.transform?.[4]) + Number(base.width || 0);
+    const horizontalGap = Number(exponent.transform?.[4]) - baseRight;
+    if (
+      baseHeight <= 0
+      || !Number.isFinite(rise)
+      || !Number.isFinite(horizontalGap)
+      || heightRatio < .58
+      || heightRatio > .78
+      || rise < baseHeight * .22
+      || rise > baseHeight * .58
+      || horizontalGap < -baseHeight * .08
+      || horizontalGap > baseHeight * .16
+    ) continue;
+
+    const baseRect = textItemRect(base, viewport);
+    const exponentRect = textItemRect(exponent, viewport);
+    const rect = scriptPairRect(base, exponent, viewport);
+    const componentCoverage = (region, component) => (
+      intersectionArea(component, region)
+        / Math.max(1, component.width * component.height)
+    );
+    const overlappingRegions = supplemented.filter(region => (
+      region.kind === 'inline'
+      && (
+        componentCoverage(region, baseRect) >= .35
+        || componentCoverage(region, exponentRect) >= .35
+      )
+    ));
+    if (overlappingRegions.some(region => (
+      componentCoverage(region, baseRect) >= .35
+      && componentCoverage(region, exponentRect) >= .35
+    ))) continue;
+    const confidence = Math.max(
+      .81,
+      ...overlappingRegions.map(region => Number(region.confidence) || 0)
+    );
+    for (const region of overlappingRegions) {
+      supplemented.splice(supplemented.indexOf(region), 1);
+    }
+
+    supplemented.push({
+      x: rect.x,
+      y: rect.y,
+      width: rect.width,
+      height: rect.height,
+      kind: 'inline',
+      confidence,
+      source: 'script-layout',
+      inferredText: `${baseValue}${exponentValue}`,
+      sourceItemIndexes: [index, index + 1]
+    });
+  }
+  return supplemented;
+}
+
 function dominantTextFont(items) {
   const weights = new Map();
   for (const item of items) {

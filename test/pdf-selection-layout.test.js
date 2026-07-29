@@ -3,7 +3,8 @@ import {
   buildSelectionSegments,
   chooseSelectionCandidate,
   confirmWeakMathRegions,
-  locateSelectionItems
+  locateSelectionItems,
+  supplementScriptMathRegions
 } from '../src/pdf-selection-layout.js';
 
 const viewport = {
@@ -289,6 +290,141 @@ describe('visual PDF selection layout', () => {
     ];
 
     expect(confirmWeakMathRegions(items, viewport, regions)).toEqual([]);
+  });
+
+  it('supplements missed uppercase symbols with a raised letter exponent', () => {
+    const items = [
+      { ...item('coordinate space ', 10, 80), fontName: 'prose' },
+      {
+        ...item('R', 90, 6.37, 500),
+        height: 9.96,
+        fontName: 'blackboard'
+      },
+      {
+        ...item('n', 96.37, 4.92, 503.61),
+        height: 6.97,
+        fontName: 'superscript'
+      },
+      { ...item(', ', 101.79, 5), fontName: 'prose' },
+      {
+        ...item('S', 106.79, 6.11, 500),
+        height: 9.96,
+        fontName: 'math'
+      },
+      {
+        ...item('n', 113.47, 4.92, 503.61),
+        height: 6.97,
+        fontName: 'superscript'
+      },
+      { ...item(' follows', 118.39, 40), fontName: 'prose' }
+    ];
+    const selection = {
+      start: 0,
+      end: items.length - 1,
+      startChar: 0,
+      endChar: items.at(-1).str.length
+    };
+
+    const regions = supplementScriptMathRegions(
+      items,
+      viewport,
+      [],
+      selection
+    );
+    const segments = buildSelectionSegments(items, viewport, regions, selection);
+    const text = segments.filter(segment => segment.type === 'text')
+      .map(segment => segment.value)
+      .join(' ');
+
+    expect(regions).toHaveLength(2);
+    expect(regions.every(region => region.source === 'script-layout')).toBe(true);
+    expect(regions.map(region => region.inferredText)).toEqual(['Rn', 'Sn']);
+    expect(regions.every(region => region.height < 14)).toBe(true);
+    expect(segments.filter(segment => segment.type === 'math')).toHaveLength(2);
+    expect(text).not.toMatch(/\b[RS]\s*n\b/);
+    expect(text).toContain('coordinate space');
+    expect(text).toContain('follows');
+  });
+
+  it('does not supplement footnotes, subscripts, or ordinary baselines', () => {
+    const cases = [
+      [
+        { ...item('A', 10, 6, 500), height: 10, fontName: 'math' },
+        { ...item('1', 16, 4, 504), height: 7, fontName: 'footnote' }
+      ],
+      [
+        { ...item('R', 10, 6, 500), height: 10, fontName: 'math' },
+        { ...item('n', 16, 4, 496), height: 7, fontName: 'subscript' }
+      ],
+      [
+        { ...item('S', 10, 6, 500), height: 10, fontName: 'math' },
+        { ...item('n', 16, 4, 500), height: 7, fontName: 'superscript' }
+      ],
+      [
+        { ...item('model', 10, 25, 500), height: 10, fontName: 'prose' },
+        { ...item('n', 35, 4, 504), height: 7, fontName: 'superscript' }
+      ],
+      [
+        { ...item('R', 10, 6, 500), height: 10, fontName: 'same' },
+        { ...item('n', 16, 4, 504), height: 7, fontName: 'same' }
+      ],
+      [
+        {
+          ...item('R', 10, 6, 500),
+          height: 10,
+          fontName: 'math',
+          transform: null
+        },
+        { ...item('n', 16, 4, 504), height: 7, fontName: 'superscript' }
+      ]
+    ];
+
+    for (const items of cases) {
+      expect(supplementScriptMathRegions(items, viewport, [])).toEqual([]);
+    }
+  });
+
+  it('does not duplicate a notation already covered by the model', () => {
+    const items = [
+      { ...item('R', 10, 6, 500), height: 10, fontName: 'math' },
+      { ...item('n', 16, 4, 504), height: 7, fontName: 'superscript' }
+    ];
+    const detected = {
+      x: 9,
+      y: 84,
+      width: 13,
+      height: 20,
+      kind: 'inline',
+      confidence: .92
+    };
+
+    expect(supplementScriptMathRegions(items, viewport, [detected]))
+      .toEqual([detected]);
+  });
+
+  it('extends a model region that covers only the base symbol', () => {
+    const items = [
+      { ...item('R', 10, 6, 500), height: 10, fontName: 'math' },
+      { ...item('n', 16, 4, 504), height: 7, fontName: 'superscript' }
+    ];
+    const partial = {
+      x: 9,
+      y: 87,
+      width: 8,
+      height: 17,
+      kind: 'inline',
+      confidence: .92
+    };
+
+    const regions = supplementScriptMathRegions(items, viewport, [partial]);
+
+    expect(regions).toHaveLength(1);
+    expect(regions[0]).toMatchObject({
+      source: 'script-layout',
+      inferredText: 'Rn',
+      confidence: .92
+    });
+    expect(regions[0].width).toBeGreaterThan(partial.width);
   });
 
   it('keeps every high-confidence visual region without text confirmation', () => {

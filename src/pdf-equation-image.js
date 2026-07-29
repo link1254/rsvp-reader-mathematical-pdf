@@ -8,7 +8,8 @@ import {
   buildSelectionSegments,
   chooseSelectionCandidate,
   confirmWeakMathRegions,
-  locateSelectionItems
+  locateSelectionItems,
+  supplementScriptMathRegions
 } from './pdf-selection-layout.js';
 import {
   parseEquationLabel,
@@ -381,7 +382,9 @@ export function visualRsvpItems(
       const image = cropMathRegion(
         canvas,
         region,
-        region.kind === 'display' ? 8 : 5,
+        region.source === 'script-layout'
+          ? 0
+          : (region.kind === 'display' ? 8 : 5),
         pixelRatio
       );
       if (!image) continue;
@@ -454,10 +457,15 @@ export async function renderVisualSelectionFromPdf(
         reportDetectionProgress(onStatus, stage, progress)
       )
     });
-    const detectedRegions = confirmWeakMathRegions(
+    const detectedRegions = supplementScriptMathRegions(
       content.items,
       viewport,
-      candidateRegions
+      confirmWeakMathRegions(
+        content.items,
+        viewport,
+        candidateRegions
+      ),
+      selection
     );
     signal?.throwIfAborted();
     onStatus(t('preparingReading'), { value: 97 });
