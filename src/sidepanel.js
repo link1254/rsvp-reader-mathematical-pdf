@@ -21,6 +21,10 @@ import {
 } from './reader-themes.js';
 import { normalizeOverviewMathMode } from './overview-display.js';
 import {
+  readerSentenceContextEntries,
+  readerSideContextText
+} from './reader-context.js';
+import {
   equationContentScale,
   equationSnapshotWidth,
   horizontalContextLaneWidth,
@@ -91,7 +95,6 @@ function orpHtml(value) {
   const chars = [...value]; const i = Math.min(orpIndex(value), chars.length - 1);
   return `<span class="orp-left">${escapeHtml(chars.slice(0, i).join(''))}</span><span class="focus-letter">${escapeHtml(chars[i] || '')}</span><span class="orp-right">${escapeHtml(chars.slice(i + 1).join(''))}</span>`;
 }
-function context(from, to) { return state.items.slice(Math.max(0, from), Math.min(state.items.length, to)).map(item => item.value).join(' '); }
 function setContextText(node, value) {
   node.dataset.fullText = value;
   node.textContent = value;
@@ -222,8 +225,11 @@ function renderParagraphOverview() {
 
 function renderSentence() {
   const { start, end } = sentenceBounds(state.items, state.index);
-  $('#sentenceContext').innerHTML = state.items.slice(start, end + 1).map((item, offset) => {
-    const index = start + offset;
+  $('#sentenceContext').innerHTML = readerSentenceContextEntries(
+    state.items,
+    start,
+    end
+  ).map(({ item, index }) => {
     return `<span class="${index === state.index ? 'active' : ''}">${escapeHtml(item.value)}</span>`;
   }).join(' ');
 }
@@ -408,8 +414,24 @@ function render() {
   const isEquation = item.type === 'equation';
   const equationLabel = item.equationLabel || parseEquationLabel(item.value);
   const equationImage = equationImageFor(item);
-  setContextText($('#previous'), context(state.index - state.contextSize, state.index));
-  setContextText($('#next'), context(state.index + 1, state.index + 1 + state.contextSize));
+  setContextText(
+    $('#previous'),
+    readerSideContextText(
+      state.items,
+      state.index,
+      state.contextSize,
+      'previous'
+    )
+  );
+  setContextText(
+    $('#next'),
+    readerSideContextText(
+      state.items,
+      state.index,
+      state.contextSize,
+      'next'
+    )
+  );
   renderSentence();
   $('#current').innerHTML = isEquation ? 'ƒ(x)' : orpHtml(item.value);
   $('#current').classList.toggle('hidden', isEquation);

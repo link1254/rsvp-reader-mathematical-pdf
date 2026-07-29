@@ -260,6 +260,16 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 5. Le rendu est limité à `16 000 000` pixels et revient automatiquement à la
    capture historique si le rendu haute résolution échoue.
 
+## Contexte de lecture sans libellé mathématique
+
+1. Les éléments de type `equation` restent visibles dans l’aperçu du passage.
+2. Les libellés `Notation mathématique` et `Équation` ne sont plus affichés
+   parmi les mots voisins à gauche ou à droite du mot actif.
+3. Ils sont également retirés de la phrase affichée au bas de la grande zone
+   de lecture.
+4. Le lecteur continue après une équation pour récupérer le nombre de vrais
+   mots demandé dans le réglage du contexte.
+
 ## Sélections sans espaces de la version 0.15.16
 
 1. Certains passages transmis par Edge concatènent presque tous les mots, par

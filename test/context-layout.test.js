@@ -28,7 +28,14 @@ describe('horizontal reading context', () => {
     expect(html).toContain('<option value="0"');
     expect(html).toContain('<option value="1"');
     expect(html).toContain('data-i18n="contextWord">1 mot</option>');
-    expect(source).toContain('state.index + 1 + state.contextSize');
+    expect(source).toContain('readerSideContextText(');
+    expect(source).toContain('state.contextSize');
+  });
+
+  it('keeps equation placeholders out of the reading viewport', () => {
+    expect(source).toContain('readerSentenceContextEntries(');
+    expect(source).toContain("'previous'");
+    expect(source).toContain("'next'");
   });
 
   it('persists and restores the selected layout', () => {
