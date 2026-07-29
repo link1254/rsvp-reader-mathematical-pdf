@@ -1,6 +1,6 @@
 {
   "name": "rsvp-reader-mathematical-pdf",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Local RSVP reader for scientific PDFs with faithful mathematical notation captures.",
   "private": true,
   "license": "PolyForm-Noncommercial-1.0.0",

@@ -1,6 +1,6 @@
 # RSVP Reader - Mathematical PDF
 
-Version stable `1.0.0` issue de la branche `main`. Les nouvelles fonctionnalités
+Version stable `1.0.1` issue de la branche `main`. Les nouvelles fonctionnalités
 continuent d'être développées et testées sur `dev/new-features`.
 
 [English](README.md) | **Français**
@@ -16,7 +16,7 @@ localement les notations mathématiques et les affiche comme des captures fidèl
 du PDF. Le document reste ouvert à la même page et aucune annotation n'est
 modifiée.
 
-> **Statut : première version stable.** La version `1.0.0` a passé les contrôles
+> **Statut : version stable.** La version `1.0.1` a passé les contrôles
 > automatisés et les principaux tests PDF. Une couverture plus large de
 > documents et de systèmes reste utile.
 
@@ -50,6 +50,8 @@ améliorer l'outil.
   et copie de l'image si nécessaire ;
 - progression visible pendant l'analyse du PDF et signalement facultatif avec
   vérification des données ;
+- réutilisation de la fenêtre de lecture existante pour une nouvelle sélection,
+  afin de conserver le modèle local déjà chargé ;
 - polices adaptées à la dyslexie, deux thèmes et fenêtre redimensionnable dont
   le contenu et les dimensions s'adaptent entre les sessions ;
 - interfaces française et anglaise, choisies automatiquement selon la langue

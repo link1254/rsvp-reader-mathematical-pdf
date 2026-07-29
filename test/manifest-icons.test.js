@@ -20,9 +20,9 @@ describe('extension icons', () => {
     }
   });
 
-  it('identifies the stable 1.0.0 release', () => {
-    expect(manifest.version).toBe('1.0.0');
-    expect(manifest.version_name).toBe('1.0.0');
+  it('identifies the stable 1.0.1 release', () => {
+    expect(manifest.version).toBe('1.0.1');
+    expect(manifest.version_name).toBe('1.0.1');
   });
 
   it('declares the project logo for the extension and toolbar action', () => {

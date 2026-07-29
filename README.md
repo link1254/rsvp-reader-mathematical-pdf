@@ -1,6 +1,6 @@
 # RSVP Reader - Mathematical PDF
 
-Stable version `1.0.0` from the `main` branch. New features continue to be
+Stable version `1.0.1` from the `main` branch. New features continue to be
 developed and tested on `dev/new-features`.
 
 **English** | [Français](README.fr.md)
@@ -15,7 +15,7 @@ It reads a selected passage one word at a time in a separate window, detects
 mathematical notation locally, and displays it as faithful snapshots from the
 PDF. The document stays open on the same page and no annotations are modified.
 
-> **Status: first stable release.** Version `1.0.0` has passed the automated
+> **Status: stable release.** Version `1.0.1` has passed the automated
 > checks and the main PDF tests. Broader document and system coverage remains
 > useful.
 
@@ -48,6 +48,8 @@ idea useful can help test, fix, and improve it.
   copying when needed;
 - visible progress during PDF analysis and an optional, privacy-reviewed problem
   report;
+- reuse of the existing reader window for a new selection, preserving the
+  loaded local model;
 - dyslexia-friendly fonts, three interface themes, and a resizable reader whose
   content and dimensions adapt between sessions;
 - French and English interfaces, selected automatically from the browser

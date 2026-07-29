@@ -4,10 +4,12 @@ import {
   setUiLanguage,
   t
 } from './i18n.js';
+import { focusHorizontalReaderWindow } from './reader-window.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 let readerWindowId = null;
 const READER_WINDOW_SIZE_KEY = 'readerWindowSize';
+const HORIZONTAL_READER_URL = api.runtime.getURL('src/sidepanel.html?layout=horizontal');
 
 async function refreshContextMenu() {
   const { uiLanguage = 'auto' } = await api.storage.local.get('uiLanguage');
@@ -40,11 +42,24 @@ async function openHorizontalReader(tab) {
     } catch { readerWindowId = null; }
   }
 
+  try {
+    const existingWindowId = await focusHorizontalReaderWindow(
+      api.windows,
+      HORIZONTAL_READER_URL
+    );
+    if (existingWindowId !== null) {
+      readerWindowId = existingWindowId;
+      return;
+    }
+  } catch (error) {
+    console.warn('Unable to locate an existing RSVP Reader window', error);
+  }
+
   const parent = await api.windows.get(tab.windowId).catch(() => null);
   const stored = await api.storage.local.get(READER_WINDOW_SIZE_KEY);
   const bounds = readerWindowLayout(parent || {}, stored[READER_WINDOW_SIZE_KEY]);
   const created = await api.windows.create({
-    url: api.runtime.getURL('src/sidepanel.html?layout=horizontal'),
+    url: HORIZONTAL_READER_URL,
     type: 'popup',
     focused: true,
     ...bounds

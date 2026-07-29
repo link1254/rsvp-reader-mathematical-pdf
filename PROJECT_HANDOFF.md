@@ -1,6 +1,6 @@
 # Reprise du projet RSVP Reader - Mathematical PDF
 
-Dernière version préparée : **1.0.0** — 29 juillet 2026.
+Dernière version préparée : **1.0.1** — 29 juillet 2026.
 
 ## Objectif du projet
 
@@ -17,10 +17,10 @@ avec **J'ai compris — continuer**.
 
 ## État actuel
 
-- Version de l'extension : `1.0.0`.
+- Version de l'extension : `1.0.1`.
 - La compilation de production est dans le dossier `dist`.
-- L'archive `1.0.0` n'a pas encore été générée.
-- Les 201 tests automatisés passent.
+- L'archive `1.0.1` n'a pas encore été générée.
+- Les 205 tests automatisés passent.
 - Le PDF de validation utilisé est le cours
   `[Riccardo Rattazzi - EPFL] NewQFTLectureNotes_08_2024.pdf`.
 - Les pages PDF 9 à 11, la page PDF 22 (page imprimée 21), la page PDF 66
@@ -494,7 +494,7 @@ dans Edge, puis fermer toute ancienne fenêtre RSVP Reader encore ouverte.
 
 ## Prochaine vérification utilisateur
 
-Recharger la version 1.0.0 et effectuer les vérifications suivantes :
+Recharger la version 1.0.1 et effectuer les vérifications suivantes :
 
 - lire `straightforwardly` en profils normal puis fort ;
 - comparer son affichage à `300` puis `600 mpm` ;
@@ -520,7 +520,7 @@ Recharger la version 1.0.0 et effectuer les vérifications suivantes :
 ## Phrase à donner à Codex sur un nouvel ordinateur
 
 > Ouvre `PROJECT_HANDOFF.md` et le projet RSVP Reader - Mathematical PDF.
-> Reprends le développement à partir de la version 1.0.0. Commence par vérifier l'état des
+> Reprends le développement à partir de la version 1.0.1. Commence par vérifier l'état des
 > fichiers et les tests, puis aide-moi à tester le comportement des équations
 > dans mon PDF de cours.
 
