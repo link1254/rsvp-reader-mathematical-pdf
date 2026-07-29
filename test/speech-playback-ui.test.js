@@ -18,12 +18,14 @@ const manifest = JSON.parse(
 );
 
 describe('synchronized speech controls', () => {
-  it('is optional, local, and disabled by default', () => {
+  it('is optional and disabled by default from the speed controls', () => {
     expect(manifest.permissions).toContain('tts');
-    expect(html).toContain('id="speechEnabled" type="checkbox"');
+    expect(html).not.toContain('id="speechEnabled"');
+    expect(html).toMatch(/class="speed"[\s\S]+id="speechToggle"[\s\S]+aria-pressed="false"/);
     expect(html).toContain('id="speechVoice"');
     expect(source).toContain('speechEnabled: false');
-    expect(source).toContain('localSpeechVoices(speechVoices)');
+    expect(source).toContain('availableSpeechVoices(speechVoices)');
+    expect(source).toContain('localSpeechVoices(voices)');
   });
 
   it('synchronizes the visible item from word boundary events', () => {
@@ -39,8 +41,16 @@ describe('synchronized speech controls', () => {
     expect(source).toContain("window.addEventListener('pagehide', stopSpeechPlayback)");
     expect(source).toContain('speechEnabled: state.speechEnabled');
     expect(source).toContain('speechVoiceName: state.speechVoiceName');
-    expect(source).toContain("$('#speechEnabled').onchange");
+    expect(source).toContain("$('#speechToggle').onclick");
     expect(source).toContain("$('#speechVoice').onchange");
     expect(stylesheet).toContain('.speech-setting{display:grid');
+    expect(stylesheet).toContain('.speed .speech-toggle[aria-pressed="true"]');
+  });
+
+  it('labels English and online voices without selecting them automatically', () => {
+    expect(source).toContain("groups.en.label = t('englishVoices')");
+    expect(source).toContain("voice.remote === true ? 'onlineVoice' : 'localVoice'");
+    expect(source).toContain("selectedVoice?.remote === true");
+    expect(source).toContain("status.textContent = t('onlineVoicePrivacy')");
   });
 });

@@ -37,6 +37,7 @@ import {
 } from './i18n.js';
 import {
   AUTOMATIC_SPEECH_VOICE,
+  availableSpeechVoices,
   buildSpeechChunk,
   detectSpeechLocale,
   localSpeechVoices,
@@ -219,39 +220,76 @@ function applyContextLayout() {
 }
 
 function speechPlaybackAvailable() {
+  const voices = availableSpeechVoices(speechVoices);
+  const explicitVoiceAvailable = state.speechVoiceName !== AUTOMATIC_SPEECH_VOICE
+    && voices.some(voice => voice.voiceName === state.speechVoiceName);
   return Boolean(
     speechApi?.speak
     && speechApi?.stop
-    && localSpeechVoices(speechVoices).length
+    && (explicitVoiceAvailable || localSpeechVoices(voices).length)
   );
 }
 
 function renderSpeechVoiceOptions() {
   const select = $('#speechVoice');
-  const checkbox = $('#speechEnabled');
+  const toggle = $('#speechToggle');
+  const toggleIcon = $('#speechToggleIcon');
   const status = $('#speechStatus');
-  const localVoices = localSpeechVoices(speechVoices);
+  const voices = availableSpeechVoices(speechVoices)
+    .sort((left, right) => {
+      const leftMicrosoft = /^Microsoft\b/i.test(left.voiceName);
+      const rightMicrosoft = /^Microsoft\b/i.test(right.voiceName);
+      return Number(rightMicrosoft) - Number(leftMicrosoft)
+        || left.voiceName.localeCompare(right.voiceName);
+    });
   const automatic = document.createElement('option');
   automatic.value = AUTOMATIC_SPEECH_VOICE;
   automatic.textContent = t('automaticLocalVoice');
-  const options = localVoices.map(voice => {
+  const groups = {
+    en: document.createElement('optgroup'),
+    fr: document.createElement('optgroup'),
+    other: document.createElement('optgroup')
+  };
+  groups.en.label = t('englishVoices');
+  groups.fr.label = t('frenchVoices');
+  groups.other.label = t('otherVoices');
+  for (const voice of voices) {
     const option = document.createElement('option');
     option.value = voice.voiceName;
-    option.textContent = voice.lang
-      ? `${voice.voiceName} (${voice.lang})`
-      : voice.voiceName;
-    return option;
-  });
-  select.replaceChildren(automatic, ...options);
-  if (!localVoices.some(voice => voice.voiceName === state.speechVoiceName)) {
+    const location = t(voice.remote === true ? 'onlineVoice' : 'localVoice');
+    option.textContent = `${voice.voiceName} (${voice.lang || '—'} - ${location})`;
+    const language = String(voice.lang || '').toLocaleLowerCase().split('-')[0];
+    groups[language === 'en' || language === 'fr' ? language : 'other'].append(option);
+  }
+  const populatedGroups = Object.values(groups).filter(group => group.children.length);
+  select.replaceChildren(automatic, ...populatedGroups);
+  if (!voices.some(voice => voice.voiceName === state.speechVoiceName)) {
     state.speechVoiceName = AUTOMATIC_SPEECH_VOICE;
   }
   select.value = state.speechVoiceName;
-  checkbox.checked = state.speechEnabled;
-  checkbox.disabled = !speechPlaybackAvailable();
-  select.disabled = !speechPlaybackAvailable() || !state.speechEnabled;
-  status.classList.toggle('hidden', speechPlaybackAvailable());
-  status.textContent = t('speechUnavailable');
+  const playbackAvailable = speechPlaybackAvailable();
+  if (!playbackAvailable) state.speechEnabled = false;
+  toggle.disabled = !playbackAvailable;
+  toggle.setAttribute('aria-pressed', String(state.speechEnabled));
+  toggle.classList.toggle('active', state.speechEnabled);
+  toggleIcon.textContent = state.speechEnabled ? '🔊' : '🔇';
+  const toggleLabel = t(state.speechEnabled ? 'disableSpeech' : 'enableSpeech');
+  toggle.title = toggleLabel;
+  toggle.setAttribute('aria-label', toggleLabel);
+  select.disabled = !voices.length;
+
+  const selectedVoice = voices.find(voice => voice.voiceName === state.speechVoiceName);
+  if (selectedVoice?.remote === true) {
+    status.textContent = t('onlineVoicePrivacy');
+    status.classList.remove('hidden');
+  } else if (!playbackAvailable) {
+    status.textContent = voices.length
+      ? t('chooseOnlineVoice')
+      : t('speechUnavailable');
+    status.classList.remove('hidden');
+  } else {
+    status.classList.add('hidden');
+  }
 }
 
 async function refreshSpeechVoices() {
@@ -716,14 +754,16 @@ $('#overviewMathMode').onchange = event => {
   render();
   save();
 };
-$('#speechEnabled').onchange = event => {
-  state.speechEnabled = event.target.checked;
+$('#speechToggle').onclick = () => {
+  if (!speechPlaybackAvailable()) return;
+  state.speechEnabled = !state.speechEnabled;
   renderSpeechVoiceOptions();
   if (state.playing) schedule();
   save();
 };
 $('#speechVoice').onchange = event => {
   state.speechVoiceName = event.target.value;
+  renderSpeechVoiceOptions();
   if (state.playing && state.speechEnabled) schedule();
   save();
 };

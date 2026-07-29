@@ -34,8 +34,9 @@ idea useful can help test, fix, and improve it.
 - RSVP reading of text selected directly in the browser's PDF viewer, with
   adjustable speed, adaptive pacing for difficult words and parentheses,
   navigation, and passage context;
-- optional local read-aloud mode whose word-boundary events keep the spoken
-  passage and the RSVP display synchronized at the selected speed;
+- optional read-aloud mode whose word-boundary events keep the spoken passage
+  and RSVP display synchronized, with local voices by default and explicitly
+  labelled online voices when Edge exposes them;
 - local detection of mathematical notation, displayed as faithful PDF snapshots
   instead of uncertain transcription;
 - extraction of common equation labels such as `(2.4)`, `(A.3a)`, `[4.2]`, or
@@ -49,7 +50,9 @@ idea useful can help test, fix, and improve it.
   content and dimensions adapt between sessions;
 - French and English interfaces, selected automatically from the browser
   language or explicitly in the reader settings;
-- fully local processing: no PDF or selected passage is sent to a server.
+- local PDF analysis: audio also stays local with the automatic voice, while an
+  explicitly selected online voice may send only the spoken segment to its
+  speech service.
 
 ## Browser support
 
@@ -220,9 +223,9 @@ excerpt and complete page image have separate consent controls.
 
 Permissions are used to create the context menu, inspect the active tab, capture
 the visible page, open and remember the RSVP window, store settings, synthesize
-speech with a local system voice, and copy an equation to the clipboard. The
-`file://`, `http://`, and `https://` permissions allow the extension to access
-the selected PDF.
+speech with the selected system voice, and copy an equation to the clipboard.
+The `file://`, `http://`, and `https://` permissions allow the extension to
+access the selected PDF.
 
 ## Firefox compatibility
 

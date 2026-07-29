@@ -86,9 +86,14 @@ export function detectSpeechLocale(text, fallbackLocale = 'fr') {
   return normalizedLocale(fallbackLocale);
 }
 
-export function localSpeechVoices(voices) {
+export function availableSpeechVoices(voices) {
   return (Array.isArray(voices) ? voices : [])
-    .filter(voice => voice?.voiceName && voice.remote !== true);
+    .filter(voice => voice?.voiceName);
+}
+
+export function localSpeechVoices(voices) {
+  return availableSpeechVoices(voices)
+    .filter(voice => voice.remote !== true);
 }
 
 export function selectSpeechVoice(
@@ -96,12 +101,13 @@ export function selectSpeechVoice(
   preferredVoiceName = AUTOMATIC_SPEECH_VOICE,
   locale = 'fr-FR'
 ) {
-  const localVoices = localSpeechVoices(voices);
+  const availableVoices = availableSpeechVoices(voices);
   if (preferredVoiceName && preferredVoiceName !== AUTOMATIC_SPEECH_VOICE) {
-    const selected = localVoices.find(voice => voice.voiceName === preferredVoiceName);
+    const selected = availableVoices.find(voice => voice.voiceName === preferredVoiceName);
     if (selected) return selected;
   }
 
+  const localVoices = localSpeechVoices(availableVoices);
   const targetLocale = String(locale || '').toLocaleLowerCase();
   const targetPrefix = localePrefix(targetLocale);
   return localVoices

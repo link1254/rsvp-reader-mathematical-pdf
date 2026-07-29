@@ -37,8 +37,9 @@ améliorer l'outil.
 - lecture RSVP du texte sélectionné directement dans le lecteur PDF du
   navigateur, avec vitesse, rythme adaptatif pour les mots difficiles et les
   parenthèses, navigation et contexte réglables ;
-- lecture à voix haute locale facultative, dont les frontières de mots
-  synchronisent la voix et l’affichage RSVP à la vitesse choisie ;
+- lecture à voix haute facultative, dont les frontières de mots synchronisent
+  la voix et l’affichage RSVP, avec des voix locales par défaut et les voix en
+  ligne clairement signalées lorsqu’Edge les expose ;
 - détection locale des notations mathématiques, affichées comme des captures
   fidèles du PDF plutôt que comme une transcription incertaine ;
 - extraction des numéros d'équation courants comme `(2.4)`, `(A.3a)`, `[4.2]`
@@ -52,7 +53,9 @@ améliorer l'outil.
   le contenu et les dimensions s'adaptent entre les sessions ;
 - interfaces française et anglaise, choisies automatiquement selon la langue
   du navigateur ou explicitement dans les réglages ;
-- traitement entièrement local : aucun PDF ni extrait n'est envoyé à un serveur.
+- analyse locale du PDF : l’audio reste aussi local avec la voix automatique ;
+  une voix en ligne choisie explicitement peut envoyer uniquement le segment
+  prononcé à son service vocal.
 
 ## Navigateurs
 
@@ -225,7 +228,7 @@ consentements séparés.
 
 Les permissions servent à créer le menu contextuel, lire l'onglet actif,
 capturer visuellement la page, ouvrir et mémoriser la fenêtre RSVP, conserver
-les réglages, synthétiser la parole avec une voix système locale et copier une
+les réglages, synthétiser la parole avec la voix système choisie et copier une
 équation dans le presse-papiers. Les autorisations `file://`, `http://` et
 `https://` permettent d'accéder au PDF sélectionné.
 

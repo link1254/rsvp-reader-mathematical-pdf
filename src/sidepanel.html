@@ -79,6 +79,10 @@
         <label for="wpm" data-i18n="speed">Vitesse</label>
         <strong><span id="wpmValue">300</span> <span data-i18n="wordsPerMinuteAbbreviation">mpm</span></strong>
         <input id="wpm" type="range" min="80" max="800" step="10" value="300">
+        <button id="speechToggle" class="speech-toggle" type="button" aria-pressed="false" data-i18n-title="enableSpeech" data-i18n-aria-label="enableSpeech" title="Activer la lecture audio" aria-label="Activer la lecture audio">
+          <span id="speechToggleIcon" aria-hidden="true">🔇</span>
+          <span data-i18n="audioReading">Lecture audio</span>
+        </button>
       </div>
       <div class="equation-mode">
         <span data-i18n="equationBehavior">Lors d’une équation</span>
@@ -156,11 +160,8 @@
         </div>
       </fieldset>
       <fieldset class="speech-setting">
-        <legend data-i18n="audioReading">Lecture audio</legend>
-        <label class="checkbox-setting">
-          <input id="speechEnabled" type="checkbox"><span data-i18n="synchronizedSpeech">Lire à voix haute et synchroniser les mots</span>
-        </label>
-        <label id="speechVoiceSetting"><span data-i18n="speechVoice">Voix locale</span>
+        <legend data-i18n="speechVoice">Voix de lecture</legend>
+        <label id="speechVoiceSetting"><span data-i18n="voiceChoice">Voix</span>
           <select id="speechVoice">
             <option value="auto" data-i18n="automaticLocalVoice">Automatique (locale)</option>
           </select>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AUTOMATIC_SPEECH_VOICE,
+  availableSpeechVoices,
   buildSpeechChunk,
   detectSpeechLocale,
   localSpeechVoices,
@@ -52,7 +53,7 @@ describe('synchronized speech playback', () => {
     expect(detectSpeechLocale('Hamiltonian', 'en')).toBe('en-US');
   });
 
-  it('keeps speech local and prefers a matching voice with word events', () => {
+  it('keeps automatic speech local but allows an explicitly selected online voice', () => {
     const voices = [
       { voiceName: 'Remote English', lang: 'en-US', remote: true, eventTypes: ['word'] },
       { voiceName: 'Local French', lang: 'fr-FR', remote: false, eventTypes: ['word'] },
@@ -65,9 +66,12 @@ describe('synchronized speech playback', () => {
       'Local English',
       'Local English Events'
     ]);
+    expect(availableSpeechVoices(voices)).toHaveLength(4);
     expect(selectSpeechVoice(voices, AUTOMATIC_SPEECH_VOICE, 'en-US')?.voiceName)
       .toBe('Local English Events');
     expect(selectSpeechVoice(voices, 'Local French', 'en-US')?.voiceName)
       .toBe('Local French');
+    expect(selectSpeechVoice(voices, 'Remote English', 'en-US')?.voiceName)
+      .toBe('Remote English');
   });
 });
