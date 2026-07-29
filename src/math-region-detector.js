@@ -176,19 +176,9 @@ export async function responseArrayBufferWithProgress(
   return bytes.buffer;
 }
 
-async function withElapsedProgress(stage, onProgress, operation) {
-  const startedAt = Date.now();
-  const report = () => onProgress(stage, {
-    elapsedMs: Date.now() - startedAt
-  });
-  report();
-  const timer = setInterval(report, 250);
-  try {
-    return await operation();
-  } finally {
-    clearInterval(timer);
-    report();
-  }
+async function runProgressStage(stage, onProgress, operation) {
+  onProgress(stage);
+  return operation();
 }
 
 async function loadSession(onProgress = () => {}) {
@@ -207,7 +197,7 @@ async function loadSession(onProgress = () => {}) {
           progress => onProgress('model-download', progress),
           MODEL_SIZE_BYTES
         );
-        const session = await withElapsedProgress(
+        const session = await runProgressStage(
           'model-compile',
           onProgress,
           () => ort.InferenceSession.create(model, {
@@ -243,7 +233,7 @@ export async function detectMathRegions(canvas, options = {}) {
       signal?.throwIfAborted();
       const session = await loadSession(onProgress);
       signal?.throwIfAborted();
-      outputs = await withElapsedProgress(
+      outputs = await runProgressStage(
         'inference',
         onProgress,
         () => session.run({ images: input.tensor })

@@ -1,4 +1,4 @@
-import { statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import {
   MODEL_SIZE_BYTES,
@@ -24,6 +24,16 @@ function responseFromChunks(chunks, total = null) {
 }
 
 describe('model loading progress', () => {
+  it('does not run a blocked elapsed-time chronometer', () => {
+    const source = readFileSync(
+      new URL('../src/math-region-detector.js', import.meta.url),
+      'utf8'
+    );
+
+    expect(source).not.toContain('setInterval');
+    expect(source).not.toContain('elapsedMs');
+  });
+
   it('keeps the packaged model size fallback accurate', () => {
     const model = statSync(
       new URL('../public/models/pix2text-mfd-1.5.onnx', import.meta.url)

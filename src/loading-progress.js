@@ -19,12 +19,6 @@ function megabytes(bytes) {
   return Math.max(0, Math.round(Number(bytes || 0) / 1_048_576));
 }
 
-function elapsedStageValue(start, end, elapsedMs, durationMs) {
-  const elapsed = Math.max(0, Number(elapsedMs) || 0);
-  const ratio = Math.min(.92, elapsed / durationMs);
-  return start + (end - start) * ratio;
-}
-
 export function detectionStageProgress(stage, details = {}) {
   if (stage === 'preparing') return { value: 76 };
   if (stage === 'queued') return { value: 77 };
@@ -51,19 +45,15 @@ export function detectionStageProgress(stage, details = {}) {
 
   if (stage === 'model-compile') {
     return {
-      value: elapsedStageValue(88, 91, details.elapsedMs, 4000),
-      label: t('elapsedTime', {
-        seconds: Math.floor(Math.max(0, Number(details.elapsedMs) || 0) / 1000)
-      })
+      indeterminate: true,
+      label: t('modelInitializationActive')
     };
   }
   if (stage === 'model-ready') return { value: 91 };
   if (stage === 'inference') {
     return {
-      value: elapsedStageValue(92, 94, details.elapsedMs, 3000),
-      label: t('elapsedTime', {
-        seconds: Math.floor(Math.max(0, Number(details.elapsedMs) || 0) / 1000)
-      })
+      indeterminate: true,
+      label: t('modelInferenceActive')
     };
   }
   if (stage === 'postprocess') return { value: 95 };

@@ -58,16 +58,16 @@ describe('detectionStageProgress', () => {
     });
   });
 
-  it('shows elapsed activity without claiming a model percentage', () => {
-    expect(detectionStageProgress('model-compile', { elapsedMs: 2000 }))
+  it('keeps unmeasurable model work explicit and indeterminate', () => {
+    expect(detectionStageProgress('model-compile'))
       .toEqual({
-        value: 89.5,
-        label: '2 s écoulées'
+        indeterminate: true,
+        label: 'Initialisation interne en cours'
       });
-    expect(detectionStageProgress('inference', { elapsedMs: 1500 }))
+    expect(detectionStageProgress('inference'))
       .toEqual({
-        value: 93,
-        label: '1 s écoulées'
+        indeterminate: true,
+        label: 'Analyse locale en cours'
       });
   });
 
@@ -80,7 +80,6 @@ describe('detectionStageProgress', () => {
         total: 80
       }).value,
       detectionStageProgress('model-ready').value,
-      detectionStageProgress('inference', { elapsedMs: 0 }).value,
       detectionStageProgress('postprocess').value
     ];
 
