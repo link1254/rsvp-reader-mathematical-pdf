@@ -82,6 +82,7 @@ describe('equationSnapshotWidth', () => {
     expect(equationSnapshotWidth(240, 1)).toBe(250);
     expect(equationSnapshotWidth(240, 1.25)).toBe(313);
     expect(equationSnapshotWidth(240, 1.6)).toBe(400);
+    expect(equationSnapshotWidth(480, 1, 2)).toBe(250);
   });
 
   it('rejects invalid widths and clamps invalid scales', () => {

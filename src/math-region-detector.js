@@ -203,19 +203,39 @@ export function selectRegionForRect(regions, rect) {
   return candidates[0].region;
 }
 
-export function cropMathRegion(canvas, region, padding = 8) {
-  const x = Math.max(0, Math.floor(region.x - padding));
-  const y = Math.max(0, Math.floor(region.y - padding));
-  const right = Math.min(canvas.width, Math.ceil(region.x + region.width + padding));
-  const bottom = Math.min(canvas.height, Math.ceil(region.y + region.height + padding));
+export function mathRegionCropBounds(
+  canvas,
+  region,
+  padding = 8,
+  coordinateScale = 1
+) {
+  const scale = Number.isFinite(coordinateScale) && coordinateScale > 0
+    ? coordinateScale
+    : 1;
+  const x = Math.max(0, Math.floor((region.x - padding) * scale));
+  const y = Math.max(0, Math.floor((region.y - padding) * scale));
+  const right = Math.min(
+    canvas.width,
+    Math.ceil((region.x + region.width + padding) * scale)
+  );
+  const bottom = Math.min(
+    canvas.height,
+    Math.ceil((region.y + region.height + padding) * scale)
+  );
   if (right <= x || bottom <= y) return null;
+  return { x, y, width: right - x, height: bottom - y };
+}
+
+export function cropMathRegion(canvas, region, padding = 8, coordinateScale = 1) {
+  const bounds = mathRegionCropBounds(canvas, region, padding, coordinateScale);
+  if (!bounds) return null;
   const crop = document.createElement('canvas');
-  crop.width = right - x;
-  crop.height = bottom - y;
+  crop.width = bounds.width;
+  crop.height = bounds.height;
   crop.getContext('2d').drawImage(
     canvas,
-    x,
-    y,
+    bounds.x,
+    bounds.y,
     crop.width,
     crop.height,
     0,

@@ -1,13 +1,60 @@
 import { describe, expect, it } from 'vitest';
 import {
+  equationImagePixelRatio,
   findMathItemRange,
   findMathItemRangeFromContext,
   findNumberedEquationItems,
+  renderEquationImageCanvas,
   resolvePdfUrl,
   visualRsvpItems
 } from '../src/pdf-equation-image.js';
 
 describe('PDF source resolution', () => {
+  it('doubles equation pixels while respecting the render memory limit', () => {
+    expect(equationImagePixelRatio({ width: 1200, height: 1600 })).toBe(2);
+    expect(equationImagePixelRatio({ width: 4000, height: 3000 }))
+      .toBeCloseTo(Math.sqrt(16_000_000 / 12_000_000));
+    expect(equationImagePixelRatio({ width: 5000, height: 4000 })).toBe(1);
+  });
+
+  it('rerenders the PDF page at scale four after scale-two detection', async () => {
+    const highResolutionCanvas = {
+      width: 0,
+      height: 0,
+      getContext: () => ({})
+    };
+    const renderedScales = [];
+    const page = {
+      getViewport: ({ scale }) => ({
+        scale,
+        width: 300 * scale,
+        height: 400 * scale
+      }),
+      render: ({ viewport }) => {
+        renderedScales.push(viewport.scale);
+        return { promise: Promise.resolve() };
+      }
+    };
+    const previousDocument = globalThis.document;
+    globalThis.document = { createElement: () => highResolutionCanvas };
+    try {
+      const result = await renderEquationImageCanvas(
+        page,
+        { width: 600, height: 800 }
+      );
+
+      expect(renderedScales).toEqual([4]);
+      expect(result.pixelRatio).toBe(2);
+      expect(result.canvas).toBe(highResolutionCanvas);
+      expect(result.canvas.width).toBe(1200);
+      expect(result.canvas.height).toBe(1600);
+    } finally {
+      if (previousDocument === undefined) delete globalThis.document;
+      else globalThis.document = previousDocument;
+    }
+  });
+
+
   it('uses a direct local PDF tab URL', () => {
     expect(resolvePdfUrl({ tabUrl: 'file:///C:/Documents/physics.pdf' })).toContain('physics.pdf');
   });
@@ -33,6 +80,44 @@ describe('PDF source resolution', () => {
       paragraphEnd: true
     });
   });
+
+  it('crops detected equations at high density and exposes their pixel ratio', () => {
+    const output = {
+      width: 0,
+      height: 0,
+      draw: null,
+      getContext() {
+        return { drawImage: (...args) => { this.draw = args; } };
+      },
+      toDataURL: () => 'data:image/png;base64,high-resolution'
+    };
+    const previousDocument = globalThis.document;
+    globalThis.document = { createElement: () => output };
+    try {
+      const result = visualRsvpItems([{
+        type: 'math',
+        regionIndex: 3,
+        region: {
+          x: 50,
+          y: 80,
+          width: 120,
+          height: 40,
+          kind: 'display',
+          confidence: .95
+        }
+      }], { width: 800, height: 600 }, 4, { pixelRatio: 2 });
+
+      expect(result.images['vision-4-3']).toContain('high-resolution');
+      expect(result.imagePixelRatios['vision-4-3']).toBe(2);
+      expect(output.width).toBe(272);
+      expect(output.height).toBe(112);
+      expect(output.draw.slice(1, 5)).toEqual([84, 144, 272, 112]);
+    } finally {
+      if (previousDocument === undefined) delete globalThis.document;
+      else globalThis.document = previousDocument;
+    }
+  });
+
   it('restores a PDF math glyph omitted by the Edge selection', () => {
     const items = [
       { str: 'The D’Alembertian operator' }, { str: ' ' }, { str: '\u0003' }, { str: ' ' },

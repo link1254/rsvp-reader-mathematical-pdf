@@ -17,6 +17,52 @@ import {
 import { selectionSearchProgress } from './loading-progress.js';
 import { t } from './i18n.js';
 
+const DETECTION_RENDER_SCALE = 2;
+const TARGET_EQUATION_PIXEL_RATIO = 2;
+const MAX_EQUATION_RENDER_PIXELS = 16_000_000;
+
+export function equationImagePixelRatio(
+  canvas,
+  maxPixels = MAX_EQUATION_RENDER_PIXELS
+) {
+  const pixels = Number(canvas?.width) * Number(canvas?.height);
+  if (!Number.isFinite(pixels) || pixels <= 0) return 1;
+  const memoryRatio = Math.sqrt(Math.max(0, maxPixels) / pixels);
+  return Math.max(1, Math.min(TARGET_EQUATION_PIXEL_RATIO, memoryRatio));
+}
+
+export async function renderEquationImageCanvas(
+  page,
+  detectionCanvas,
+  signal = null
+) {
+  const pixelRatio = equationImagePixelRatio(detectionCanvas);
+  if (pixelRatio <= 1) return { canvas: detectionCanvas, pixelRatio: 1 };
+
+  try {
+    signal?.throwIfAborted();
+    const viewport = page.getViewport({
+      scale: DETECTION_RENDER_SCALE * pixelRatio
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    await page.render({
+      canvasContext: canvas.getContext('2d'),
+      viewport
+    }).promise;
+    signal?.throwIfAborted();
+    return { canvas, pixelRatio };
+  } catch (error) {
+    signal?.throwIfAborted();
+    console.warn(
+      'High-resolution equation rendering unavailable; using the detection image.',
+      error
+    );
+    return { canvas: detectionCanvas, pixelRatio: 1 };
+  }
+}
+
 function reportDetectionProgress(onStatus, stage) {
   const states = {
     preparing: [t('preparingModelImage'), { value: 76 }],
@@ -311,17 +357,29 @@ async function findSelectionPage(pdf, payload, onStatus, signal = null) {
   return chooseSelectionCandidate(candidates, hint);
 }
 
-export function visualRsvpItems(segments, canvas, pageNumber) {
+export function visualRsvpItems(
+  segments,
+  canvas,
+  pageNumber,
+  { pixelRatio = 1 } = {}
+) {
   const items = [];
   const images = {};
+  const imagePixelRatios = {};
   let unresolvedCount = 0;
   for (const segment of segments) {
     if (segment.type === 'math') {
       const region = segment.region;
       const equationId = `vision-${pageNumber}-${segment.regionIndex}`;
-      const image = cropMathRegion(canvas, region, region.kind === 'display' ? 8 : 5);
+      const image = cropMathRegion(
+        canvas,
+        region,
+        region.kind === 'display' ? 8 : 5,
+        pixelRatio
+      );
       if (!image) continue;
       images[equationId] = image;
+      imagePixelRatios[equationId] = pixelRatio;
       const equationItem = {
         value: t(region.kind === 'display' ? 'equation' : 'mathNotation'),
         type: 'equation',
@@ -350,7 +408,7 @@ export function visualRsvpItems(segments, canvas, pageNumber) {
       }
     }
   }
-  return { items, images, unresolvedCount };
+  return { items, images, imagePixelRatios, unresolvedCount };
 }
 
 export async function renderVisualSelectionFromPdf(
@@ -374,7 +432,7 @@ export async function renderVisualSelectionFromPdf(
 
     const { page, pageNumber, content, selection } = selectedPage;
     signal?.throwIfAborted();
-    const viewport = page.getViewport({ scale: 2 });
+    const viewport = page.getViewport({ scale: DETECTION_RENDER_SCALE });
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(viewport.width);
     canvas.height = Math.round(viewport.height);
@@ -395,7 +453,19 @@ export async function renderVisualSelectionFromPdf(
     signal?.throwIfAborted();
     onStatus(t('preparingReading'), { value: 97 });
     const segments = buildSelectionSegments(content.items, viewport, detectedRegions, selection);
-    const result = visualRsvpItems(segments, canvas, pageNumber);
+    const hasEquationImages = segments.some(segment => segment.type === 'math');
+    if (hasEquationImages) {
+      onStatus(t('enhancingEquationImages'), { value: 98 });
+    }
+    const equationImageSource = hasEquationImages
+      ? await renderEquationImageCanvas(page, canvas, signal)
+      : { canvas, pixelRatio: 1 };
+    const result = visualRsvpItems(
+      segments,
+      equationImageSource.canvas,
+      pageNumber,
+      { pixelRatio: equationImageSource.pixelRatio }
+    );
     if (!result.items.length) throw new Error(t('noReadableSelection'));
     return {
       ...result,
@@ -443,7 +513,7 @@ export async function renderEquationFromPdf(payload, onStatus = () => {}, equati
     const found = anchor.length && findSequence(pageWords.map(value => ({ value })), anchor) >= 0;
     if (!found) continue;
 
-    const viewport = page.getViewport({ scale: 2 });
+    const viewport = page.getViewport({ scale: DETECTION_RENDER_SCALE });
     const canvas = document.createElement('canvas'); canvas.width = Math.round(viewport.width); canvas.height = Math.round(viewport.height);
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
     onStatus(t('detectingMath'));
@@ -455,8 +525,8 @@ export async function renderEquationFromPdf(payload, onStatus = () => {}, equati
         return centerY >= selectionRange[0] && centerY <= selectionRange[1];
       })
       : detectedRegions;
-    const images = {};
-    const labelImages = {};
+    const imageRegions = new Map();
+    const labelRegions = new Map();
     for (const label of requestedLabels) {
       // Les parenthèses sont indispensables : sans elles, la section "1.2."
       // est confondue avec l'équation "(1.2)" dans le cours de test.
@@ -468,12 +538,11 @@ export async function renderEquationFromPdf(payload, onStatus = () => {}, equati
         .filter(Boolean);
       const uniqueRegions = [...new Set(associations)];
       if (uniqueRegions.length !== 1) continue;
-      const region = uniqueRegions[0];
-      const image = region ? cropMathRegion(canvas, region) : null;
-      if (image) labelImages[label] = image;
+      labelRegions.set(label, uniqueRegions[0]);
     }
     requestedEquations.filter(request => request.label).forEach(request => {
-      if (labelImages[request.label]) images[request.id] = labelImages[request.label];
+      const region = labelRegions.get(request.label);
+      if (region) imageRegions.set(request.id, { region, padding: 8 });
     });
     for (const request of requestedInline) {
       const expression = request.value;
@@ -483,10 +552,28 @@ export async function renderEquationFromPdf(payload, onStatus = () => {}, equati
       const equationItems = content.items.slice(range.start, range.end + 1);
       const rect = textItemsRect(viewport, equationItems);
       const region = rect ? selectRegionForRect(relevantRegions, rect) : null;
-      const image = region ? cropMathRegion(canvas, region, 5) : null;
-      if (image) images[request.id] = image;
+      if (region) imageRegions.set(request.id, { region, padding: 5 });
     }
-    if (Object.keys(images).length) return { images, pageNumber, pdfUrl };
+    if (imageRegions.size) {
+      onStatus(t('enhancingEquationImages'));
+      const imageSource = await renderEquationImageCanvas(page, canvas);
+      const images = {};
+      const imagePixelRatios = {};
+      for (const [id, { region, padding }] of imageRegions) {
+        const image = cropMathRegion(
+          imageSource.canvas,
+          region,
+          padding,
+          imageSource.pixelRatio
+        );
+        if (!image) continue;
+        images[id] = image;
+        imagePixelRatios[id] = imageSource.pixelRatio;
+      }
+      if (Object.keys(images).length) {
+        return { images, imagePixelRatios, pageNumber, pdfUrl };
+      }
+    }
   }
   const requested = requestedEquations.map(request => request.value);
   throw new Error(t('equationNotFound', { labels: requested.join(', ') }));

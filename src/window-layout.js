@@ -83,8 +83,15 @@ export function equationContentScale(
   ) * 100) / 100;
 }
 
-export function equationSnapshotWidth(naturalWidth, contentScale = 1) {
+export function equationSnapshotWidth(
+  naturalWidth,
+  contentScale = 1,
+  pixelRatio = 1
+) {
   if (!Number.isFinite(naturalWidth) || naturalWidth <= 0) return null;
+  const density = Number.isFinite(pixelRatio) && pixelRatio > 0
+    ? pixelRatio
+    : 1;
   const scale = Number.isFinite(contentScale)
     ? Math.min(
         MAX_EQUATION_CONTENT_SCALE,
@@ -92,7 +99,7 @@ export function equationSnapshotWidth(naturalWidth, contentScale = 1) {
       )
     : 1;
   return Math.round(
-    (naturalWidth + EQUATION_SNAPSHOT_HORIZONTAL_PADDING) * scale
+    (naturalWidth / density + EQUATION_SNAPSHOT_HORIZONTAL_PADDING) * scale
   );
 }
 

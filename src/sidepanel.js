@@ -59,7 +59,7 @@ const extensionStorage = api?.storage?.local ?? {
   set: async () => {}
 };
 const $ = selector => document.querySelector(selector);
-const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', speechEnabled: false, speechVoiceName: AUTOMATIC_SPEECH_VOICE, fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
+const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', speechEnabled: false, speechVoiceName: AUTOMATIC_SPEECH_VOICE, fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationImagePixelRatios: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
 let selectionLoadId = 0;
 let selectionAbortController = null;
 let feedbackController = null;
@@ -174,6 +174,11 @@ function equationImageFor(item) {
   return item.manualImage || state.equationImages[item.equationId] || null;
 }
 
+function equationImagePixelRatioFor(item) {
+  if (item?.type !== 'equation' || item.manualImage) return 1;
+  return state.equationImagePixelRatios[item.equationId] || 1;
+}
+
 function renderParagraphOverview() {
   const fragment = document.createDocumentFragment();
   state.items.forEach((item, index) => {
@@ -193,6 +198,13 @@ function renderParagraphOverview() {
           : item.value);
         button.title = button.getAttribute('aria-label');
         const preview = document.createElement('img');
+        const pixelRatio = equationImagePixelRatioFor(item);
+        preview.dataset.pixelRatio = String(pixelRatio);
+        if (pixelRatio > 1) {
+          preview.addEventListener('load', () => {
+            preview.style.width = `${preview.naturalWidth / pixelRatio}px`;
+          }, { once: true });
+        }
         preview.src = image;
         preview.alt = '';
         button.append(preview);
@@ -328,7 +340,11 @@ function applyLanguage() {
 
 function resizeEquationSnapshot(scale = currentEquationScale) {
   const snapshot = $('#equationSnapshot');
-  const width = equationSnapshotWidth(snapshot.naturalWidth, scale);
+  const width = equationSnapshotWidth(
+    snapshot.naturalWidth,
+    scale,
+    Number(snapshot.dataset.pixelRatio) || 1
+  );
   if (width) snapshot.style.width = `${width}px`;
 }
 
@@ -418,6 +434,7 @@ function render() {
         : t('analyzingPdfPage'));
   if (isEquation && equationImage) {
     const snapshot = $('#equationSnapshot');
+    snapshot.dataset.pixelRatio = String(equationImagePixelRatioFor(item));
     if (snapshot.getAttribute('src') !== equationImage) {
       snapshot.style.removeProperty('width');
       snapshot.src = equationImage;
@@ -621,6 +638,7 @@ async function loadSelection(payload) {
   state.items = [];
   state.index = 0;
   state.equationImages = {};
+  state.equationImagePixelRatios = {};
   state.equationLookupComplete = false;
   state.selectionPayload = payload;
   state.pageNumber = null;
@@ -643,6 +661,7 @@ async function loadSelection(payload) {
     setLoadingProgress(t('readingReady'), { value: 100 });
     state.items = result.items;
     state.equationImages = result.images || {};
+    state.equationImagePixelRatios = result.imagePixelRatios || {};
     state.pageCapture = result.pageCapture || state.pageCapture || null;
     state.pageNumber = result.pageNumber || null;
     state.equationLookupComplete = true;
@@ -686,6 +705,8 @@ function clearSelection() {
   selectionLoadId++;
   pause();
   state.items = [];
+  state.equationImages = {};
+  state.equationImagePixelRatios = {};
   state.selectionPayload = null;
   state.pageCapture = null;
   state.pageNumber = null;

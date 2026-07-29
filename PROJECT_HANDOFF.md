@@ -249,6 +249,17 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 4. Le choix utilise la même préférence persistante que les thèmes `Classique`
    et `Minimal`.
 
+## Images d’équation haute résolution de la branche bêta
+
+1. La détection reste effectuée sur le rendu PDF historique à l’échelle `2`.
+2. Après validation des régions, la page est rendue une seconde fois avec
+   jusqu’à deux fois plus de pixels par axe pour produire les captures.
+3. Les coordonnées et les marges détectées sont simplement mises à l’échelle :
+   aucune règle de détection ou d’association des numéros n’est modifiée.
+4. La taille visuelle est conservée grâce au facteur de densité de l’image.
+5. Le rendu est limité à `16 000 000` pixels et revient automatiquement à la
+   capture historique si le rendu haute résolution échoue.
+
 ## Sélections sans espaces de la version 0.15.16
 
 1. Certains passages transmis par Edge concatènent presque tous les mots, par

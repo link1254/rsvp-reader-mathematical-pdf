@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  mathRegionCropBounds,
   decodeMathRegions,
   modelGeometry,
   nonMaxSuppression,
@@ -71,5 +72,16 @@ describe('local mathematical region detector', () => {
     const rect = { x: 120, y: 195, width: 110, height: 30 };
 
     expect(selectRegionForRect([first, second], rect)).toBeNull();
+  });
+
+  it('scales the detected crop without changing its logical region', () => {
+    const bounds = mathRegionCropBounds(
+      { width: 500, height: 400 },
+      { x: 10.5, y: 20.5, width: 100, height: 50 },
+      8,
+      2
+    );
+
+    expect(bounds).toEqual({ x: 5, y: 25, width: 232, height: 132 });
   });
 });
