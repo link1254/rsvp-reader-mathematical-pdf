@@ -21,8 +21,9 @@ describe('ORP fixation guide', () => {
     expect(stylesheet).toContain('grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)');
     expect(stylesheet).toContain('.orp-left{justify-self:end}');
     expect(stylesheet).toContain('.orp-right{justify-self:start}');
-    expect(source).toContain('stableHorizontalContextEnabled() ? current.clientWidth : viewport.clientWidth - 32');
     expect(source).toContain('Math.max(node.getBoundingClientRect().width, node.scrollWidth)');
+    expect(source).toContain('const leftExtent =');
+    expect(source).toContain('const rightExtent =');
     expect(source).toContain('2 * Math.max(partWidths[0] || 0, partWidths[2] || 0)');
     expect(source).toContain('Math.max(18, Math.floor');
   });

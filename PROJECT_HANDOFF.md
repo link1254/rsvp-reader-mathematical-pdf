@@ -335,10 +335,11 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 
 1. La case **Contexte sur une ligne** place les mots précédents à gauche et les
    mots suivants à droite du mot courant.
-2. Les deux colonnes de contexte ont la même largeur, afin que le mot actif
-   reste centré lorsque la longueur des mots voisins change.
-3. Les mots très longs sont réduits uniquement si nécessaire pour tenir dans
-   la zone centrale sans recouvrir le contexte.
+2. Le repère ORP du mot actif reste centré. Une largeur minimale est réservée
+   dynamiquement à chaque côté selon la largeur de la fenêtre et le nombre de
+   mots de contexte demandé.
+3. Les mots très longs sont réduits uniquement si nécessaire pour préserver
+   ces zones latérales. Les mots courts conservent leur taille normale.
 4. Le mode reste désactivé par défaut, s'applique immédiatement et est conservé
    dans `chrome.storage.local`.
 5. La carte des équations et son système de validation ne sont pas modifiés.

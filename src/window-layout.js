@@ -95,3 +95,16 @@ export function equationSnapshotWidth(naturalWidth, contentScale = 1) {
     (naturalWidth + EQUATION_SNAPSHOT_HORIZONTAL_PADDING) * scale
   );
 }
+
+export function horizontalContextLaneWidth(viewportWidth, contextSize) {
+  const width = Number(viewportWidth);
+  const count = Number(contextSize);
+  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(count) || count <= 0) {
+    return 0;
+  }
+
+  const ratio = Math.min(.38, .14 + Math.min(7, count) * .035);
+  const minimum = count === 1 ? 72 : 96;
+  const maximum = Math.min(300, Math.max(0, width / 2 - 72));
+  return Math.round(Math.min(maximum, Math.max(minimum, width * ratio)));
+}

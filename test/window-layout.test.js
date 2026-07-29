@@ -4,6 +4,7 @@ import {
   DEFAULT_READER_SIZE,
   equationContentScale,
   equationSnapshotWidth,
+  horizontalContextLaneWidth,
   normalizeEquationImageSize,
   readerContentScale,
   readerWindowLayout,
@@ -104,5 +105,20 @@ describe('equation image size', () => {
     expect(equationContentScale(1, 60)).toBe(.6);
     expect(equationContentScale(1.25, 120)).toBe(1.5);
     expect(equationContentScale(1.6, 180)).toBe(2.4);
+  });
+});
+
+describe('horizontalContextLaneWidth', () => {
+  it('reserves more room when more context words are requested', () => {
+    expect(horizontalContextLaneWidth(768, 0)).toBe(0);
+    expect(horizontalContextLaneWidth(768, 1)).toBe(134);
+    expect(horizontalContextLaneWidth(768, 3)).toBe(188);
+    expect(horizontalContextLaneWidth(768, 5)).toBe(242);
+  });
+
+  it('responds to the window width without consuming the center', () => {
+    expect(horizontalContextLaneWidth(600, 12)).toBe(228);
+    expect(horizontalContextLaneWidth(1200, 12)).toBe(300);
+    expect(horizontalContextLaneWidth(Number.NaN, 3)).toBe(0);
   });
 });

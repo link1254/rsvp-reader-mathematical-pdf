@@ -13,6 +13,10 @@ const stylesheet = readFileSync(
   new URL('../src/sidepanel.css', import.meta.url),
   'utf8'
 );
+const fixes = readFileSync(
+  new URL('../src/fixes.css', import.meta.url),
+  'utf8'
+);
 
 describe('horizontal reading context', () => {
   it('is an optional setting that remains disabled by default', () => {
@@ -38,13 +42,19 @@ describe('horizontal reading context', () => {
     expect(stylesheet).toContain('.context-horizontal .current{position:absolute');
     expect(stylesheet).toContain('.context-horizontal .previous');
     expect(stylesheet).toContain('.context-horizontal .next');
-    expect(source).toContain('stableHorizontalContextEnabled() ? current.clientWidth : viewport.clientWidth - 32');
+    expect(source).toContain('const previousLane =');
+    expect(source).toContain('const nextLane =');
   });
 
   it('anchors context to the visible word and truncates toward the outer edges', () => {
     expect(source).toContain('function layoutHorizontalContext');
+    expect(source).toContain('horizontalContextLaneWidth');
+    expect(source).toContain('const availableRight = Math.max');
     expect(source).toContain('fitContextText(previous, true)');
     expect(source).toContain('fitContextText(next, false)');
     expect(source).toContain("let best = '\\u2026'");
+    expect(fixes).toContain(
+      '.context{font-size:min(calc(22px * var(--reader-scale)),28px)}'
+    );
   });
 });

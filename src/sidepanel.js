@@ -23,6 +23,7 @@ import { normalizeOverviewMathMode } from './overview-display.js';
 import {
   equationContentScale,
   equationSnapshotWidth,
+  horizontalContextLaneWidth,
   normalizeEquationImageSize,
   readerContentScale
 } from './window-layout.js';
@@ -235,17 +236,41 @@ function applyResponsiveSizing(isEquation = state.items[state.index]?.type === '
   const preferredSize = Math.round(baseSize * scale);
   current.style.fontSize = `${preferredSize}px`;
   if (!isEquation) {
-    const availableWidth = Math.max(
-      90,
-      stableHorizontalContextEnabled() ? current.clientWidth : viewport.clientWidth - 32
-    );
     const partWidths = [...current.children].map(
       (node) => Math.max(node.getBoundingClientRect().width, node.scrollWidth)
     );
-    const renderedWidth =
-      (partWidths[1] || 0) + 2 * Math.max(partWidths[0] || 0, partWidths[2] || 0);
-    if (renderedWidth > availableWidth) {
-      current.style.fontSize = `${Math.max(18, Math.floor(preferredSize * availableWidth / renderedWidth))}px`;
+    const focusHalf = (partWidths[1] || 0) / 2;
+    const leftExtent = (partWidths[0] || 0) + focusHalf;
+    const rightExtent = (partWidths[2] || 0) + focusHalf;
+    let sizeRatio = 1;
+
+    if (stableHorizontalContextEnabled()) {
+      const laneWidth = horizontalContextLaneWidth(
+        viewport.clientWidth,
+        state.contextSize
+      );
+      const halfWidth = current.clientWidth / 2;
+      const edgeAndWordGap = 8;
+      const previousLane = $('#previous').dataset.fullText ? laneWidth : 0;
+      const nextLane = $('#next').dataset.fullText ? laneWidth : 0;
+      const availableLeft = Math.max(45, halfWidth - edgeAndWordGap - previousLane);
+      const availableRight = Math.max(45, halfWidth - edgeAndWordGap - nextLane);
+      sizeRatio = Math.min(
+        1,
+        leftExtent ? availableLeft / leftExtent : 1,
+        rightExtent ? availableRight / rightExtent : 1
+      );
+    } else {
+      const availableWidth = Math.max(90, viewport.clientWidth - 32);
+      const renderedWidth = (partWidths[1] || 0)
+        + 2 * Math.max(partWidths[0] || 0, partWidths[2] || 0);
+      sizeRatio = renderedWidth > availableWidth
+        ? availableWidth / renderedWidth
+        : 1;
+    }
+
+    if (sizeRatio < 1) {
+      current.style.fontSize = `${Math.max(18, Math.floor(preferredSize * sizeRatio))}px`;
     }
   }
   layoutHorizontalContext(isEquation);
