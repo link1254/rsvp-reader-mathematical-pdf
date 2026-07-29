@@ -36,7 +36,8 @@ idea useful can help test, fix, and improve it.
   navigation, and passage context;
 - optional read-aloud mode whose word-boundary events keep the spoken passage
   and RSVP display synchronized, with local voices by default and explicitly
-  labelled online voices when Edge exposes them;
+  labelled online voices when Edge exposes them, including
+  **Microsoft Aria Online (Natural) - English (United States)**;
 - local detection of mathematical notation, displayed as faithful PDF snapshots
   instead of uncertain transcription;
 - extraction of common equation labels such as `(2.4)`, `(A.3a)`, `[4.2]`, or

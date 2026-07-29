@@ -40,14 +40,20 @@ import {
   availableSpeechVoices,
   buildSpeechChunk,
   detectSpeechLocale,
+  isMicrosoftAriaNaturalVoice,
   localSpeechVoices,
   selectSpeechVoice,
   speechItemIndexAtBoundary,
   speechRateFromWpm
 } from './speech-playback.js';
+import { createSpeechPlaybackApi } from './speech-api.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
-const speechApi = api?.tts;
+const speechApi = createSpeechPlaybackApi({
+  chromeTts: api?.tts,
+  speechSynthesis: globalThis.speechSynthesis,
+  SpeechSynthesisUtterance: globalThis.SpeechSynthesisUtterance
+});
 const extensionStorage = api?.storage?.local ?? {
   get: async () => ({}),
   set: async () => {}
@@ -237,9 +243,12 @@ function renderSpeechVoiceOptions() {
   const status = $('#speechStatus');
   const voices = availableSpeechVoices(speechVoices)
     .sort((left, right) => {
+      const leftAria = isMicrosoftAriaNaturalVoice(left);
+      const rightAria = isMicrosoftAriaNaturalVoice(right);
       const leftMicrosoft = /^Microsoft\b/i.test(left.voiceName);
       const rightMicrosoft = /^Microsoft\b/i.test(right.voiceName);
-      return Number(rightMicrosoft) - Number(leftMicrosoft)
+      return Number(rightAria) - Number(leftAria)
+        || Number(rightMicrosoft) - Number(leftMicrosoft)
         || left.voiceName.localeCompare(right.voiceName);
     });
   const automatic = document.createElement('option');
@@ -257,7 +266,10 @@ function renderSpeechVoiceOptions() {
     const option = document.createElement('option');
     option.value = voice.voiceName;
     const location = t(voice.remote === true ? 'onlineVoice' : 'localVoice');
-    option.textContent = `${voice.voiceName} (${voice.lang || '—'} - ${location})`;
+    const recommendation = isMicrosoftAriaNaturalVoice(voice)
+      ? ` - ${t('recommendedVoice')}`
+      : '';
+    option.textContent = `${voice.voiceName} (${voice.lang || '—'} - ${location}${recommendation})`;
     const language = String(voice.lang || '').toLocaleLowerCase().split('-')[0];
     groups[language === 'en' || language === 'fr' ? language : 'other'].append(option);
   }

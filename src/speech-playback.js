@@ -91,6 +91,11 @@ export function availableSpeechVoices(voices) {
     .filter(voice => voice?.voiceName);
 }
 
+export function isMicrosoftAriaNaturalVoice(voice) {
+  return /^Microsoft Aria Online \(Natural\)/i.test(String(voice?.voiceName || ''))
+    && String(voice?.lang || '').toLocaleLowerCase() === 'en-us';
+}
+
 export function localSpeechVoices(voices) {
   return availableSpeechVoices(voices)
     .filter(voice => voice.remote !== true);

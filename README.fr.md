@@ -39,7 +39,8 @@ améliorer l'outil.
   parenthèses, navigation et contexte réglables ;
 - lecture à voix haute facultative, dont les frontières de mots synchronisent
   la voix et l’affichage RSVP, avec des voix locales par défaut et les voix en
-  ligne clairement signalées lorsqu’Edge les expose ;
+  ligne clairement signalées lorsqu’Edge les expose, notamment
+  **Microsoft Aria Online (Natural) - English (United States)** ;
 - détection locale des notations mathématiques, affichées comme des captures
   fidèles du PDF plutôt que comme une transcription incertaine ;
 - extraction des numéros d'équation courants comme `(2.4)`, `(A.3a)`, `[4.2]`

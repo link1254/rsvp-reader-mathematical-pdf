@@ -49,6 +49,8 @@ describe('synchronized speech controls', () => {
 
   it('labels English and online voices without selecting them automatically', () => {
     expect(source).toContain("groups.en.label = t('englishVoices')");
+    expect(source).toContain('isMicrosoftAriaNaturalVoice(voice)');
+    expect(source).toContain("t('recommendedVoice')");
     expect(source).toContain("voice.remote === true ? 'onlineVoice' : 'localVoice'");
     expect(source).toContain("selectedVoice?.remote === true");
     expect(source).toContain("status.textContent = t('onlineVoicePrivacy')");

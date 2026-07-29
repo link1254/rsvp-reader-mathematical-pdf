@@ -4,6 +4,7 @@ import {
   availableSpeechVoices,
   buildSpeechChunk,
   detectSpeechLocale,
+  isMicrosoftAriaNaturalVoice,
   localSpeechVoices,
   selectSpeechVoice,
   speechItemIndexAtBoundary,
@@ -73,5 +74,16 @@ describe('synchronized speech playback', () => {
       .toBe('Local French');
     expect(selectSpeechVoice(voices, 'Remote English', 'en-US')?.voiceName)
       .toBe('Remote English');
+  });
+
+  it('recognizes the exact Microsoft Aria Natural English voice', () => {
+    expect(isMicrosoftAriaNaturalVoice({
+      voiceName: 'Microsoft Aria Online (Natural) - English (United States)',
+      lang: 'en-US'
+    })).toBe(true);
+    expect(isMicrosoftAriaNaturalVoice({
+      voiceName: 'Microsoft Aria Online (Natural) - French (France)',
+      lang: 'fr-FR'
+    })).toBe(false);
   });
 });
