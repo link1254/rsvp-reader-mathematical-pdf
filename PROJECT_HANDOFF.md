@@ -1,12 +1,12 @@
-# Reprise du projet RSVP Reader Beta - Mathematical PDF
+# Reprise du projet RSVP Reader - Mathematical PDF
 
-Dernière version préparée : **0.16.0** — 29 juillet 2026.
+Dernière version préparée : **1.0.0** — 29 juillet 2026.
 
 ## Objectif du projet
 
 Créer une extension Microsoft Edge de lecture RSVP pour les PDF scientifiques.
 L'utilisateur sélectionne un passage dans le lecteur PDF d'Edge, puis choisit
-**Lire la sélection avec RSVP Reader Beta** dans le menu contextuel. Une fenêtre
+**Lire la sélection avec RSVP Reader** dans le menu contextuel. Une fenêtre
 horizontale reste au-dessus du PDF et affiche le mot courant, son contexte et
 l'aperçu du passage.
 
@@ -17,10 +17,10 @@ avec **J'ai compris — continuer**.
 
 ## État actuel
 
-- Version de l'extension : `0.16.0`.
+- Version de l'extension : `1.0.0`.
 - La compilation de production est dans le dossier `dist`.
-- L'archive `0.16.0` n'a pas encore été générée.
-- Les 143 tests automatisés passent.
+- L'archive `1.0.0` n'a pas encore été générée.
+- Les 201 tests automatisés passent.
 - Le PDF de validation utilisé est le cours
   `[Riccardo Rattazzi - EPFL] NewQFTLectureNotes_08_2024.pdf`.
 - Les pages PDF 9 à 11, la page PDF 22 (page imprimée 21), la page PDF 66
@@ -143,7 +143,7 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 ## Documentation et renommage de la version 0.15.7
 
 1. Le projet et l'extension portent désormais le nom
-   **RSVP Reader Beta - Mathematical PDF**.
+   **RSVP Reader - Mathematical PDF**.
 2. Le slug GitHub prévu est `rsvp-reader-mathematical-pdf`.
 3. Le README documente l'installation sur Edge, Chrome et Brave, les limites
    Firefox, la vie privée, les contributions et les sources des composants.
@@ -169,7 +169,7 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 6. Le manifeste fournit les métadonnées localisées dans `_locales/fr` et
    `_locales/en`.
 
-## Numérotation des équations de la version 0.16.0
+## Numérotation des équations de la version 1.0.0
 
 1. Les numéros d'équation ne sont plus lus comme des mots RSVP.
 2. Les formats `(1)`, `(2.4)`, `(2.4a)`, `(A.3)`, `(A3)`, `(IV.2)`, `[4.2]`
@@ -239,7 +239,7 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 4. Le choix est appliqué immédiatement, enregistré dans `chrome.storage.local`
    et restauré aux utilisations suivantes.
 
-## Thème Eliot de la branche bêta
+## Thème Eliot de la version 1.0.0
 
 1. Les réglages proposent aussi le thème clair `Eliot`.
 2. La palette emploie un fond gris perle, des surfaces blanches non agressives,
@@ -249,7 +249,7 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 4. Le choix utilise la même préférence persistante que les thèmes `Classique`
    et `Minimal`.
 
-## Images d’équation haute résolution de la branche bêta
+## Images d’équation haute résolution de la version 1.0.0
 
 1. La détection reste effectuée sur le rendu PDF historique à l’échelle `2`.
 2. Après validation des régions, la page est rendue une seconde fois avec
@@ -412,7 +412,7 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 7. Les mots longs continuent de réduire leur taille si la fenêtre devient
    étroite.
 
-## Lecture audio synchronisée de la branche bêta
+## Lecture audio synchronisée de la version 1.0.0
 
 1. Le bouton **Lecture audio**, placé sous la barre de vitesse, reste désactivé
    par défaut. Le moteur hybride utilise `SpeechSynthesis` pour les voix
@@ -494,7 +494,7 @@ dans Edge, puis fermer toute ancienne fenêtre RSVP Reader encore ouverte.
 
 ## Prochaine vérification utilisateur
 
-Recharger la version 0.16.0 et effectuer les vérifications suivantes :
+Recharger la version 1.0.0 et effectuer les vérifications suivantes :
 
 - lire `straightforwardly` en profils normal puis fort ;
 - comparer son affichage à `300` puis `600 mpm` ;
@@ -519,8 +519,8 @@ Recharger la version 0.16.0 et effectuer les vérifications suivantes :
 
 ## Phrase à donner à Codex sur un nouvel ordinateur
 
-> Ouvre `PROJECT_HANDOFF.md` et le projet RSVP Reader Beta - Mathematical PDF.
-> Reprends le développement à partir de la version 0.16.0. Commence par vérifier l'état des
+> Ouvre `PROJECT_HANDOFF.md` et le projet RSVP Reader - Mathematical PDF.
+> Reprends le développement à partir de la version 1.0.0. Commence par vérifier l'état des
 > fichiers et les tests, puis aide-moi à tester le comportement des équations
 > dans mon PDF de cours.
 

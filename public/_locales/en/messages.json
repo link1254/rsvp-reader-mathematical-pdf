@@ -1,11 +1,11 @@
 {
   "appName": {
-    "message": "RSVP Reader Beta - Mathematical PDF"
+    "message": "RSVP Reader - Mathematical PDF"
   },
   "appDescription": {
-    "message": "Beta version of the local RSVP reader for scientific PDFs with faithful mathematical notation detection and captures."
+    "message": "Local RSVP reader for scientific PDFs with faithful mathematical notation detection and captures."
   },
   "actionTitle": {
-    "message": "Open RSVP Reader Beta"
+    "message": "Open RSVP Reader"
   }
 }
