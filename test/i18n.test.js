@@ -22,7 +22,7 @@ describe('interface localization', () => {
 
   it('translates labels and interpolates values', () => {
     const english = createTranslator('en');
-    expect(english('readSelection')).toBe('Read selection with RSVP Reader');
+    expect(english('readSelection')).toBe('Read selection with RSVP Reader Beta');
     expect(english('wordPosition', { current: 4, total: 12 })).toBe('Word 4 of 12');
 
     setUiLanguage('en');

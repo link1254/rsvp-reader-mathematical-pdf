@@ -1,12 +1,12 @@
-# Reprise du projet RSVP Reader - Mathematical PDF
+# Reprise du projet RSVP Reader Beta - Mathematical PDF
 
-Dernière version préparée : **1.0.1** — 29 juillet 2026.
+Dernière version préparée : **1.1.0-beta.1** — 31 juillet 2026.
 
 ## Objectif du projet
 
 Créer une extension Microsoft Edge de lecture RSVP pour les PDF scientifiques.
 L'utilisateur sélectionne un passage dans le lecteur PDF d'Edge, puis choisit
-**Lire la sélection avec RSVP Reader** dans le menu contextuel. Une fenêtre
+**Lire la sélection avec RSVP Reader Beta** dans le menu contextuel. Une fenêtre
 horizontale reste au-dessus du PDF et affiche le mot courant, son contexte et
 l'aperçu du passage.
 
@@ -17,10 +17,10 @@ avec **J'ai compris — continuer**.
 
 ## État actuel
 
-- Version de l'extension : `1.0.1`.
+- Version de l'extension : `1.1.0-beta.1`.
 - La compilation de production est dans le dossier `dist`.
-- L'archive `1.0.1` n'a pas encore été générée.
-- Les 205 tests automatisés passent.
+- L'archive `1.1.0-beta.1` n'a pas encore été générée.
+- Les 209 tests automatisés passent.
 - Le PDF de validation utilisé est le cours
   `[Riccardo Rattazzi - EPFL] NewQFTLectureNotes_08_2024.pdf`.
 - Les pages PDF 9 à 11, la page PDF 22 (page imprimée 21), la page PDF 66
@@ -142,8 +142,9 @@ Les raisons techniques et la stratégie générale sont détaillées dans
 
 ## Documentation et renommage de la version 0.15.7
 
-1. Le projet et l'extension portent désormais le nom
-   **RSVP Reader - Mathematical PDF**.
+1. La branche de test et son extension portent le nom
+   **RSVP Reader Beta - Mathematical PDF**. La branche `main` conserve le nom
+   stable sans la mention Beta.
 2. Le slug GitHub prévu est `rsvp-reader-mathematical-pdf`.
 3. Le README documente l'installation sur Edge, Chrome et Brave, les limites
    Firefox, la vie privée, les contributions et les sources des composants.
@@ -442,6 +443,17 @@ Les raisons techniques et la stratégie générale sont détaillées dans
    deux fragments séparément ; les composés usuels comme `well-known` gardent
    leur trait d’union et restent une seule unité vocale.
 
+## Taille stable des mots de la version 1.1.0-beta.1
+
+1. La taille du mot actif n'est plus recalculée à chaque changement de mot.
+2. Une taille commune est calculée à partir du mot le plus contraignant du
+   passage, de la largeur disponible et du réglage utilisateur.
+3. Cette taille est la plus grande valeur commune permettant aux mots de tenir
+   dans la fenêtre, avec un espace minimal conservé pour le contexte horizontal.
+4. Le calcul est mis en cache et ne recommence qu'après une nouvelle sélection,
+   un redimensionnement ou un changement de taille, de police ou de disposition.
+5. Les équations conservent leur réglage de taille indépendant.
+
 ## Corrections importantes des versions 0.13.0 à 0.13.5
 
 1. Un numéro de section comme `1.2.` n'est plus confondu avec le numéro
@@ -494,7 +506,7 @@ dans Edge, puis fermer toute ancienne fenêtre RSVP Reader encore ouverte.
 
 ## Prochaine vérification utilisateur
 
-Recharger la version 1.0.1 et effectuer les vérifications suivantes :
+Recharger la version 1.1.0-beta.1 et effectuer les vérifications suivantes :
 
 - lire `straightforwardly` en profils normal puis fort ;
 - comparer son affichage à `300` puis `600 mpm` ;
@@ -519,8 +531,8 @@ Recharger la version 1.0.1 et effectuer les vérifications suivantes :
 
 ## Phrase à donner à Codex sur un nouvel ordinateur
 
-> Ouvre `PROJECT_HANDOFF.md` et le projet RSVP Reader - Mathematical PDF.
-> Reprends le développement à partir de la version 1.0.1. Commence par vérifier l'état des
+> Ouvre `PROJECT_HANDOFF.md` et le projet RSVP Reader Beta - Mathematical PDF.
+> Reprends le développement à partir de la version 1.1.0-beta.1. Commence par vérifier l'état des
 > fichiers et les tests, puis aide-moi à tester le comportement des équations
 > dans mon PDF de cours.
 

@@ -1,12 +1,12 @@
-# RSVP Reader - Mathematical PDF
+# RSVP Reader Beta - Mathematical PDF
 
-Version stable `1.0.1` issue de la branche `main`. Les nouvelles fonctionnalités
-continuent d'être développées et testées sur `dev/new-features`.
+Version de test `1.1.0-beta.1` issue de `dev/new-features`. La version stable
+`1.0.1` reste disponible sur `main`, sans la mention Beta.
 
 [English](README.md) | **Français**
 
 <p align="center">
-  <img src="public/icons/icon-128.png" width="128" height="128" alt="Logo de RSVP Reader - Mathematical PDF">
+  <img src="public/icons/icon-128.png" width="128" height="128" alt="Logo de RSVP Reader Beta - Mathematical PDF">
 </p>
 
 Extension de lecture RSVP pour les PDF scientifiques et mathématiques.
@@ -16,9 +16,8 @@ localement les notations mathématiques et les affiche comme des captures fidèl
 du PDF. Le document reste ouvert à la même page et aucune annotation n'est
 modifiée.
 
-> **Statut : version stable.** La version `1.0.1` a passé les contrôles
-> automatisés et les principaux tests PDF. Une couverture plus large de
-> documents et de systèmes reste utile.
+> **Statut : version bêta de test.** Cette branche contient les fonctionnalités
+> en cours de validation avant leur prochaine publication stable.
 
 ## Pourquoi ce projet ?
 
@@ -52,6 +51,8 @@ améliorer l'outil.
   vérification des données ;
 - réutilisation de la fenêtre de lecture existante pour une nouvelle sélection,
   afin de conserver le modèle local déjà chargé ;
+- taille du mot actif stable pendant tout le passage, recalculée uniquement si
+  la fenêtre, la police ou le réglage de taille change ;
 - polices adaptées à la dyslexie, deux thèmes et fenêtre redimensionnable dont
   le contenu et les dimensions s'adaptent entre les sessions ;
 - interfaces française et anglaise, choisies automatiquement selon la langue
@@ -136,7 +137,7 @@ Brave repose sur Chromium et
 1. Ouvrir un PDF contenant une couche de texte dans le navigateur.
 2. Sélectionner le passage à lire.
 3. Faire un clic droit sur la sélection.
-4. Choisir **Lire la sélection avec RSVP Reader**.
+4. Choisir **Lire la sélection avec RSVP Reader Beta**.
 5. Attendre la fin de l'analyse locale, puis utiliser :
    - `Espace` pour lancer ou mettre en pause ;
    - les flèches gauche et droite pour avancer mot par mot ;

@@ -9,6 +9,10 @@ const stylesheet = readFileSync(
   new URL('../src/sidepanel.css', import.meta.url),
   'utf8'
 );
+const sizingSource = readFileSync(
+  new URL('../src/word-sizing.js', import.meta.url),
+  'utf8'
+);
 
 describe('ORP fixation guide', () => {
   it('renders the word around a dedicated focus letter', () => {
@@ -22,10 +26,10 @@ describe('ORP fixation guide', () => {
     expect(stylesheet).toContain('.orp-left{justify-self:end}');
     expect(stylesheet).toContain('.orp-right{justify-self:start}');
     expect(source).toContain('Math.max(node.getBoundingClientRect().width, node.scrollWidth)');
-    expect(source).toContain('const leftExtent =');
-    expect(source).toContain('const rightExtent =');
-    expect(source).toContain('2 * Math.max(partWidths[0] || 0, partWidths[2] || 0)');
-    expect(source).toContain('Math.max(18, Math.floor');
+    expect(source).toContain('left: (partWidths[0] || 0) + focusHalf');
+    expect(source).toContain('right: (partWidths[2] || 0) + focusHalf');
+    expect(source).toContain('stablePassageWordFontSize(current, preferredSize)');
+    expect(sizingSource).toContain('Math.floor(preferred * ratio)');
   });
 
   it('attaches two readable guide marks directly to the focus letter', () => {

@@ -49,14 +49,14 @@ describe('horizontal reading context', () => {
     expect(stylesheet).toContain('.context-horizontal .current{position:absolute');
     expect(stylesheet).toContain('.context-horizontal .previous');
     expect(stylesheet).toContain('.context-horizontal .next');
-    expect(source).toContain('const previousLane =');
-    expect(source).toContain('const nextLane =');
+    expect(source).toContain('stablePassageWordFontSize(');
+    expect(source).toContain('const contextGutter =');
   });
 
   it('anchors context to the visible word and truncates toward the outer edges', () => {
     expect(source).toContain('function layoutHorizontalContext');
-    expect(source).toContain('horizontalContextLaneWidth');
-    expect(source).toContain('const availableRight = Math.max');
+    expect(source).toContain('let wordLeft =');
+    expect(source).toContain('let wordRight =');
     expect(source).toContain('fitContextText(previous, true)');
     expect(source).toContain('fitContextText(next, false)');
     expect(source).toContain("let best = '\\u2026'");

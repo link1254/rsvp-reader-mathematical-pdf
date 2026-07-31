@@ -1,12 +1,12 @@
-# RSVP Reader - Mathematical PDF
+# RSVP Reader Beta - Mathematical PDF
 
-Stable version `1.0.1` from the `main` branch. New features continue to be
-developed and tested on `dev/new-features`.
+Test version `1.1.0-beta.1` from `dev/new-features`. The stable version `1.0.1`
+remains available on `main` without the Beta label.
 
 **English** | [Français](README.fr.md)
 
 <p align="center">
-  <img src="public/icons/icon-128.png" width="128" height="128" alt="RSVP Reader - Mathematical PDF logo">
+  <img src="public/icons/icon-128.png" width="128" height="128" alt="RSVP Reader Beta - Mathematical PDF logo">
 </p>
 
 An RSVP reading extension for scientific and mathematical PDF documents.
@@ -15,9 +15,8 @@ It reads a selected passage one word at a time in a separate window, detects
 mathematical notation locally, and displays it as faithful snapshots from the
 PDF. The document stays open on the same page and no annotations are modified.
 
-> **Status: stable release.** Version `1.0.1` has passed the automated
-> checks and the main PDF tests. Broader document and system coverage remains
-> useful.
+> **Status: beta test build.** This branch contains features being validated
+> before their next stable release.
 
 ## Why this project?
 
@@ -50,6 +49,8 @@ idea useful can help test, fix, and improve it.
   report;
 - reuse of the existing reader window for a new selection, preserving the
   loaded local model;
+- one stable active-word size per passage, recalculated only when the window,
+  font, or size setting changes;
 - dyslexia-friendly fonts, three interface themes, and a resizable reader whose
   content and dimensions adapt between sessions;
 - French and English interfaces, selected automatically from the browser
@@ -137,7 +138,7 @@ Brave is based on Chromium and
 1. Open a PDF with a text layer in the browser.
 2. Select the passage you want to read.
 3. Right-click the selection.
-4. Choose **Read selection with RSVP Reader**.
+4. Choose **Read selection with RSVP Reader Beta**.
 5. Wait for the local analysis to finish, then use:
    - `Space` to play or pause;
    - the left and right arrow keys to move one word at a time;
