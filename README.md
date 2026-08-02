@@ -1,7 +1,9 @@
 # RSVP Reader - Mathematical PDF
 
 Stable version `1.0.1` from the `main` branch. New features continue to be
-developed and tested on `dev/new-features`.
+developed and tested on `dev/new-features`. An experimental Firefox port is
+available separately from the [`dev/firefox`](https://github.com/link1254/rsvp-reader-mathematical-pdf/tree/dev/firefox)
+branch.
 
 **English** | [Français](README.fr.md)
 
@@ -65,12 +67,13 @@ idea useful can help test, fix, and improve it.
 | Microsoft Edge | Supported and used for the primary tests | `edge://extensions` |
 | Google Chrome | Supported on Chromium 116 or newer | `chrome://extensions` |
 | Brave | Supported on recent Chromium-based desktop versions | `brave://extensions` |
-| Firefox | Not currently compatible | `about:debugging#/runtime/this-firefox` |
+| Firefox | Beta available from `dev/firefox` | `about:debugging#/runtime/this-firefox` |
 
 Edge, Chrome, and Brave use the same Chromium extension APIs. Brave officially
 states that it supports nearly all Chromium-compatible extensions. Firefox uses
-different APIs for its sidebar and background process; details are available in
-the [Firefox compatibility](#firefox-compatibility) section.
+a dedicated manifest, build, and compatibility layer kept on the separate
+`dev/firefox` branch; details are available in the
+[Firefox compatibility](#firefox-compatibility) section.
 
 ## Installation
 
@@ -131,6 +134,31 @@ Official documentation:
 
 Brave is based on Chromium and
 [documents its compatibility with Chromium extensions](https://support.brave.com/hc/en-us/articles/360017909112-How-can-I-add-extensions-to-Brave).
+
+### 5. Firefox (beta)
+
+The Firefox port is developed separately from the stable Chromium version. To
+keep both copies independent, clone the Firefox branch into its own directory:
+
+```bash
+git clone --branch dev/firefox --single-branch https://github.com/link1254/rsvp-reader-mathematical-pdf.git rsvp-reader-firefox
+cd rsvp-reader-firefox
+npm install
+npm run check:firefox
+```
+
+The Firefox extension is created in `dist-firefox`. To load it:
+
+1. Open `about:debugging#/runtime/this-firefox` in Firefox.
+2. Select **Load Temporary Add-on**.
+3. Select the `dist-firefox/manifest.json` file, not only the directory.
+4. Open a PDF, select a passage, right-click it, and start RSVP Reader.
+5. For a PDF stored on the computer, confirm the same PDF once when the reader
+   asks for it. The file stays in memory only for the current reader session.
+
+This is a temporary developer installation: Firefox removes the add-on when the
+browser closes. Permanent installation will require a packaged version signed
+by Mozilla.
 
 ## Usage
 
@@ -233,20 +261,22 @@ access the selected PDF.
 
 ## Firefox compatibility
 
-The current code cannot be loaded into Firefox as-is.
+An initial Firefox beta is available on the separate
+[`dev/firefox`](https://github.com/link1254/rsvp-reader-mathematical-pdf/tree/dev/firefox)
+branch. It reuses the PDF and mathematical detection engine while providing a
+Firefox-specific manifest, background process, sidebar adapter, build, and test
+suite. It does not replace or modify the Chromium package in `dist`.
 
-- Chromium uses `sidePanel`, while Firefox uses
-  [`sidebar_action`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/sidebar_action).
-- The current manifest declares a
-  [`background.service_worker`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background),
-  which Firefox handles differently.
-- The manifest also contains Chromium-specific fields and permissions.
-- Firefox's built-in PDF viewer, tab capture behavior, and image clipboard
-  support need dedicated validation.
+Current beta limitations:
 
-A clean port will require a separately generated Firefox manifest, a sidebar
-adapter, and a dedicated test campaign. Most of the PDF and mathematical
-detection engine should nevertheless be reusable.
+- loading through `about:debugging` is temporary until a release is packaged
+  and signed by Mozilla;
+- for a local `file://` PDF, Firefox asks the user to select the same PDF once;
+  the selected file is retained in memory only for the current reader window;
+- speech synthesis uses the voices exposed by Firefox and the operating system;
+  Chromium-specific voices such as Microsoft Aria Online may not be available;
+- broader testing across Firefox versions and different scientific PDFs is
+  still required before calling this port stable.
 
 ## Development
 
@@ -274,7 +304,7 @@ Feedback, issues, and pull requests are welcome, especially for:
 - reducing false positives and missed formulas;
 - improving accessibility and the reading experience;
 - measuring performance on other computers;
-- preparing the Firefox port;
+- testing and improving the Firefox beta;
 - adding reproducible tests.
 
 When reporting a problem, include the browser and its version, the extension

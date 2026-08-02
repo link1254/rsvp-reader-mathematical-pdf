@@ -1,7 +1,9 @@
 # RSVP Reader - Mathematical PDF
 
 Version stable `1.0.1` issue de la branche `main`. Les nouvelles fonctionnalités
-continuent d'être développées et testées sur `dev/new-features`.
+continuent d'être développées et testées sur `dev/new-features`. Un portage
+Firefox expérimental est disponible séparément sur la branche
+[`dev/firefox`](https://github.com/link1254/rsvp-reader-mathematical-pdf/tree/dev/firefox).
 
 [English](README.md) | **Français**
 
@@ -67,13 +69,14 @@ améliorer l'outil.
 | Microsoft Edge | Pris en charge et utilisé pour les tests principaux | `edge://extensions` |
 | Google Chrome | Pris en charge sur Chromium 116 ou plus récent | `chrome://extensions` |
 | Brave | Pris en charge sur les versions desktop récentes basées sur Chromium | `brave://extensions` |
-| Firefox | Non compatible en l'état | `about:debugging#/runtime/this-firefox` |
+| Firefox | Bêta disponible sur `dev/firefox` | `about:debugging#/runtime/this-firefox` |
 
 Edge, Chrome et Brave utilisent les mêmes API d'extension Chromium. Brave
 indique officiellement prendre en charge presque toutes les extensions
-compatibles Chromium. Firefox utilise des API différentes pour la barre
-latérale et le processus d'arrière-plan ; les détails sont expliqués dans la
-section [Compatibilité Firefox](#compatibilité-firefox).
+compatibles Chromium. Firefox utilise un manifeste, une compilation et une
+couche de compatibilité dédiés, conservés sur la branche séparée `dev/firefox` ;
+les détails sont expliqués dans la section
+[Compatibilité Firefox](#compatibilité-firefox).
 
 ## Installation
 
@@ -130,6 +133,35 @@ Documentation officielle :
 
 Brave repose sur Chromium et
 [documente la compatibilité avec les extensions Chromium](https://support.brave.com/hc/en-us/articles/360017909112-How-can-I-add-extensions-to-Brave).
+
+### 5. Firefox (bêta)
+
+Le portage Firefox est développé séparément de la version Chromium stable. Pour
+garder les deux copies indépendantes, cloner la branche Firefox dans son propre
+dossier :
+
+```bash
+git clone --branch dev/firefox --single-branch https://github.com/link1254/rsvp-reader-mathematical-pdf.git rsvp-reader-firefox
+cd rsvp-reader-firefox
+npm install
+npm run check:firefox
+```
+
+L'extension Firefox est créée dans `dist-firefox`. Pour la charger :
+
+1. Ouvrir `about:debugging#/runtime/this-firefox` dans Firefox.
+2. Cliquer sur **Charger un module complémentaire temporaire**.
+3. Sélectionner le fichier `dist-firefox/manifest.json`, et pas seulement le
+   dossier.
+4. Ouvrir un PDF, sélectionner un passage, faire un clic droit et lancer RSVP
+   Reader.
+5. Pour un PDF enregistré sur l'ordinateur, confirmer une fois le même PDF
+   lorsque le lecteur le demande. Le fichier reste uniquement en mémoire
+   pendant la session actuelle du lecteur.
+
+Il s'agit d'une installation temporaire de développement : Firefox supprime le
+module à la fermeture du navigateur. Une installation permanente nécessitera
+une version empaquetée et signée par Mozilla.
 
 ## Utilisation
 
@@ -237,20 +269,24 @@ les réglages, synthétiser la parole avec la voix système choisie et copier un
 
 ## Compatibilité Firefox
 
-Le code ne peut pas être chargé tel quel dans Firefox.
+Une première bêta Firefox est disponible sur la branche séparée
+[`dev/firefox`](https://github.com/link1254/rsvp-reader-mathematical-pdf/tree/dev/firefox).
+Elle réutilise le moteur PDF et la détection mathématique, avec un manifeste, un
+processus d'arrière-plan, un adaptateur de barre latérale, une compilation et
+des tests propres à Firefox. Elle ne remplace pas et ne modifie pas le paquet
+Chromium contenu dans `dist`.
 
-- Chromium utilise `sidePanel`, tandis que Firefox utilise
-  [`sidebar_action`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/sidebar_action).
-- Le manifeste actuel déclare un
-  [`background.service_worker`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background),
-  qui n'est pas pris en charge de la même manière par Firefox.
-- Le manifeste contient aussi des champs et permissions propres à Chromium.
-- Le comportement du lecteur PDF intégré, de la capture d'onglet et de la copie
-  d'image doit être validé séparément.
+Limites actuelles de la bêta :
 
-Un portage propre demandera un manifeste Firefox généré séparément, un adaptateur
-pour la barre latérale et une campagne de tests dédiée. Une grande partie du
-moteur PDF et de la détection mathématique pourra néanmoins être réutilisée.
+- le chargement par `about:debugging` reste temporaire jusqu'à ce qu'une version
+  soit empaquetée et signée par Mozilla ;
+- pour un PDF local en `file://`, Firefox demande de sélectionner une fois le
+  même PDF ; le fichier reste uniquement en mémoire dans la fenêtre de lecture
+  actuelle ;
+- la synthèse vocale utilise les voix proposées par Firefox et le système ; les
+  voix propres à Chromium, comme Microsoft Aria Online, peuvent être absentes ;
+- des tests plus larges sur différentes versions de Firefox et différents PDF
+  scientifiques restent nécessaires avant de déclarer ce portage stable.
 
 ## Développement
 
@@ -278,7 +314,7 @@ Les retours, issues et pull requests sont bienvenus, en particulier pour :
 - réduire les faux positifs et les formules manquées ;
 - améliorer l'accessibilité et l'expérience de lecture ;
 - mesurer les performances sur d'autres machines ;
-- préparer le portage Firefox ;
+- tester et améliorer la bêta Firefox ;
 - ajouter des tests reproductibles.
 
 Pour signaler un problème, indiquez si possible le navigateur et sa version, la
