@@ -3,6 +3,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
+const distributionDirectory = process.argv[2] || 'dist';
+if (!['dist', 'dist-firefox'].includes(distributionDirectory)) {
+  throw new Error(`Unsupported distribution directory: ${distributionDirectory}`);
+}
 const projectLicense = 'PolyForm-Noncommercial-1.0.0';
 const projectLicenseTitle = '# PolyForm Noncommercial License 1.0.0';
 const requiredNotice = 'Required Notice: Copyright 2026 Axel.';
@@ -88,17 +92,17 @@ const requiredSourceFiles = [
 ];
 
 const requiredDistributionFiles = [
-  'dist/LICENSE',
-  'dist/THIRD_PARTY_NOTICES.md',
-  'dist/licenses/PDFJS-APACHE-2.0.txt',
-  'dist/licenses/ONNXRUNTIME-MIT.txt',
-  'dist/licenses/ONNXRUNTIME-THIRD-PARTY-NOTICES.txt',
-  'dist/licenses/PIX2TEXT-MFD-MIT.txt',
-  'dist/licenses/KATEX-MIT.txt',
-  'dist/licenses/ATKINSON-HYPERLEGIBLE-OFL-1.1.txt',
-  'dist/licenses/OPENDYSLEXIC-OFL-1.1.txt',
-  'dist/licenses/LEXEND-OFL-1.1.txt'
-];
+  'LICENSE',
+  'THIRD_PARTY_NOTICES.md',
+  'licenses/PDFJS-APACHE-2.0.txt',
+  'licenses/ONNXRUNTIME-MIT.txt',
+  'licenses/ONNXRUNTIME-THIRD-PARTY-NOTICES.txt',
+  'licenses/PIX2TEXT-MFD-MIT.txt',
+  'licenses/KATEX-MIT.txt',
+  'licenses/ATKINSON-HYPERLEGIBLE-OFL-1.1.txt',
+  'licenses/OPENDYSLEXIC-OFL-1.1.txt',
+  'licenses/LEXEND-OFL-1.1.txt'
+].map(file => `${distributionDirectory}/${file}`);
 
 for (const file of [...requiredSourceFiles, ...requiredDistributionFiles]) {
   if (!existsSync(resolve(root, file))) {
@@ -107,7 +111,7 @@ for (const file of [...requiredSourceFiles, ...requiredDistributionFiles]) {
 }
 
 const bundledPackages = JSON.parse(
-  readFileSync(resolve(root, 'dist/BUNDLED_DEPENDENCIES.json'), 'utf8')
+  readFileSync(resolve(root, distributionDirectory, 'BUNDLED_DEPENDENCIES.json'), 'utf8')
 );
 
 for (const name of bundledPackages) {

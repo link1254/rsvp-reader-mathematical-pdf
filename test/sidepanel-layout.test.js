@@ -48,4 +48,11 @@ describe('sidepanel layout', () => {
       'if (_removedBetaFeature === true) supportedSettings.horizontalContext = false'
     );
   });
+
+  it('offers an explicit local PDF fallback for Firefox', () => {
+    expect(sidepanelHtml).toContain('id="localPdfPicker"');
+    expect(sidepanelHtml).toContain('accept="application/pdf,.pdf"');
+    expect(sidepanelSource).toContain('payloadWithCachedLocalPdf');
+    expect(sidepanelSource).toContain('localPdfCache.data.slice()');
+  });
 });

@@ -108,6 +108,15 @@ export function resolvePdfUrl(payload) {
   return null;
 }
 
+export function pdfDocumentSource(payload, pdfUrl = resolvePdfUrl(payload)) {
+  const data = payload?.pdfData;
+  if (data instanceof Uint8Array && data.byteLength) return { data };
+  if (data instanceof ArrayBuffer && data.byteLength) {
+    return { data: new Uint8Array(data) };
+  }
+  return pdfUrl;
+}
+
 function word(value) { return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
 function selectionWords(text) { return text.split(/\s+/).map(word).filter(value => value.length >= 2); }
 
@@ -433,7 +442,7 @@ export async function renderVisualSelectionFromPdf(
   const { default: workerUrl } = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
   pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
   onStatus(t('openingPdf'), { indeterminate: true });
-  const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+  const pdf = await pdfjsLib.getDocument(pdfDocumentSource(payload, pdfUrl)).promise;
   try {
     const selectedPage = await findSelectionPage(pdf, payload, onStatus, signal);
     if (!selectedPage) {
@@ -518,7 +527,7 @@ export async function renderEquationFromPdf(payload, onStatus = () => {}, equati
   const { default: workerUrl } = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
   pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
   onStatus('Ouverture du PDF…');
-  const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+  const pdf = await pdfjsLib.getDocument(pdfDocumentSource(payload, pdfUrl)).promise;
   const target = selectionWords(payload.text);
   const anchor = target.slice(0, Math.min(5, target.length));
 

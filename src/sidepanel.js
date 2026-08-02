@@ -9,7 +9,10 @@ import {
 } from './selection-engine.js';
 import { orpIndex } from './text-engine.js';
 import { cropCaptureRect } from './equation-image.js';
-import { renderVisualSelectionFromPdf } from './pdf-equation-image.js';
+import {
+  renderVisualSelectionFromPdf,
+  resolvePdfUrl
+} from './pdf-equation-image.js';
 import { copyPngDataUrl } from './image-clipboard.js';
 import { normalizeLoadingProgress } from './loading-progress.js';
 import {
@@ -21,6 +24,12 @@ import {
   normalizeReaderTheme
 } from './reader-themes.js';
 import { normalizeOverviewMathMode } from './overview-display.js';
+import {
+  localPdfBytes,
+  localPdfFileName,
+  localPdfKey,
+  matchesLocalPdfFile
+} from './local-pdf.js';
 import {
   readerSentenceContextEntries,
   readerSideContextText
@@ -75,12 +84,35 @@ let speechRunActive = false;
 let equationImagePreloads = [];
 let stableWordSizeCache = { key: null, value: null };
 let passageWordExtentsCache = { key: null, value: [] };
+let localPdfCache = null;
+let pendingLocalPdfPayload = null;
 
 function restoreWaitingUi() {
   $('#waiting h1').textContent = t('selectPassage');
   $('#waiting p').textContent = t('selectPassageHelp');
   $('#waitingAction').textContent = t('readSelection');
   $('#loadingProgress').classList.add('hidden');
+  $('#localPdfPickerLabel').classList.add('hidden');
+  $('#localPdfPicker').value = '';
+  pendingLocalPdfPayload = null;
+}
+
+function payloadWithCachedLocalPdf(payload) {
+  if (localPdfBytes(payload)) return payload;
+  const key = localPdfKey(resolvePdfUrl(payload));
+  if (!key || localPdfCache?.key !== key) return payload;
+  return { ...payload, pdfData: localPdfCache.data.slice() };
+}
+
+function requestLocalPdfFile(payload) {
+  const pdfUrl = resolvePdfUrl(payload);
+  const filename = localPdfFileName(pdfUrl) || t('openPdf');
+  pendingLocalPdfPayload = payload;
+  $('#waiting h1').textContent = t('localPdfAccessRequired');
+  $('#waiting p').textContent = t('localPdfAccessHelp', { filename });
+  $('#waitingAction').textContent = filename;
+  $('#loadingProgress').classList.add('hidden');
+  $('#localPdfPickerLabel').classList.remove('hidden');
 }
 
 function setLoadingProgress(message, details = {}) {
@@ -759,6 +791,7 @@ function replaySentence() {
 }
 
 async function loadSelection(payload) {
+  payload = payloadWithCachedLocalPdf(payload);
   selectionAbortController?.abort();
   const abortController = new AbortController();
   selectionAbortController = abortController;
@@ -778,6 +811,7 @@ async function loadSelection(payload) {
   $('#waiting h1').textContent = t('localMathAnalysis');
   setLoadingProgress(t('openingPdf'), { indeterminate: true });
   $('#waitingAction').textContent = t('documentStaysLocal');
+  $('#localPdfPickerLabel').classList.add('hidden');
   try { $('#source').textContent = payload.sourceUrl ? new URL(payload.sourceUrl).pathname.split('/').pop() || t('openPdf') : t('pdfSelection'); } catch { $('#source').textContent = t('pdfSelection'); }
   try {
     const result = await renderVisualSelectionFromPdf(
@@ -806,6 +840,10 @@ async function loadSelection(payload) {
   } catch (error) {
     if (error?.name === 'AbortError') return;
     if (loadId !== selectionLoadId) return;
+    if (!localPdfBytes(payload) && localPdfKey(resolvePdfUrl(payload))) {
+      requestLocalPdfFile(payload);
+      return;
+    }
     console.warn(error);
     state.items = [{
       value: t('mathAnalysisUnavailable'),
@@ -953,6 +991,24 @@ $('#settingsButton').onclick = () => {
   $('#settings').showModal();
 };
 $('#clear').onclick = clearSelection;
+$('#localPdfPicker').onchange = async event => {
+  const file = event.target.files?.[0];
+  const payload = pendingLocalPdfPayload;
+  if (!file || !payload) return;
+  const pdfUrl = resolvePdfUrl(payload);
+  const filename = localPdfFileName(pdfUrl) || t('openPdf');
+  if (!matchesLocalPdfFile(file, pdfUrl)) {
+    $('#waiting p').textContent = t('localPdfMismatch', { filename });
+    event.target.value = '';
+    return;
+  }
+
+  setLoadingProgress(t('localPdfLoading'), { indeterminate: true });
+  const data = new Uint8Array(await file.arrayBuffer());
+  localPdfCache = { key: localPdfKey(pdfUrl), data };
+  pendingLocalPdfPayload = null;
+  await loadSelection({ ...payload, pdfData: data.slice() });
+};
 $('#paragraphText').onclick = event => { const word = event.target.closest('[data-index]'); if (!word) return; state.index = Number(word.dataset.index); render(); if (state.playing) schedule(); };
 document.addEventListener('keydown', event => {
   const controlsBlocked = event.target.closest('input, select, textarea')

@@ -95,3 +95,8 @@
 [data-reader-theme="eliot"] .paragraph-text button.active{background:#efb5c8;color:#38262d;box-shadow:none}
 [data-reader-theme="eliot"] .paragraph-text button.math-preview{border-color:#dca8ba;border-radius:3px;background:#fff}
 [data-reader-theme="eliot"] .paragraph-text button.math-preview.active{border-color:#c6537b;background:#efb5c8}
+
+.local-pdf-picker{display:inline-flex;align-items:center;justify-content:center;margin:14px auto 0;border:1px solid var(--brand);border-radius:6px;background:var(--brand);color:#111936;padding:10px 14px;font-size:12px;font-weight:800;cursor:pointer}
+.local-pdf-picker input{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+[data-reader-theme="minimal"] .local-pdf-picker{border-radius:2px;color:#111316}
+[data-reader-theme="eliot"] .local-pdf-picker{background:#b95078;color:#fff}

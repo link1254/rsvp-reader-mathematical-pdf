@@ -5,6 +5,10 @@ import {
   t
 } from './i18n.js';
 import { focusHorizontalReaderWindow } from './reader-window.js';
+import {
+  openReaderFallback,
+  removeAllContextMenus
+} from './browser-compat.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 let readerWindowId = null;
@@ -14,9 +18,7 @@ const HORIZONTAL_READER_URL = api.runtime.getURL('src/sidepanel.html?layout=hori
 async function refreshContextMenu() {
   const { uiLanguage = 'auto' } = await api.storage.local.get('uiLanguage');
   setUiLanguage(normalizeUiLanguagePreference(uiLanguage));
-  await new Promise(resolve => {
-    api.contextMenus.removeAll(resolve);
-  });
+  await removeAllContextMenus(api);
   api.contextMenus.create({
     id: 'rsvp-selection',
     title: t('readSelection'),
@@ -32,6 +34,9 @@ api.runtime.onStartup.addListener(() => {
 });
 api.storage.onChanged.addListener(changes => {
   if (changes.uiLanguage) void refreshContextMenu();
+});
+api.action?.onClicked?.addListener(() => {
+  if (api.sidebarAction?.open) void api.sidebarAction.open();
 });
 
 async function openHorizontalReader(tab) {
@@ -95,7 +100,10 @@ api.contextMenus.onClicked.addListener(async (info, tab) => {
     await openHorizontalReader(tab);
   } catch (error) {
     console.error('Unable to open the RSVP Reader window', error);
-    await api.sidePanel.setOptions({ tabId: tab.id, path: 'src/sidepanel.html', enabled: true });
-    await api.sidePanel.open({ tabId: tab.id });
+    await openReaderFallback(api, {
+      tabId: tab.id,
+      windowId: tab.windowId,
+      panelPath: 'src/sidepanel.html'
+    });
   }
 });

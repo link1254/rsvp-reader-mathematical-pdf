@@ -34,6 +34,10 @@
         <progress id="loadingBar" max="100" data-i18n-aria-label="loadingProgress" aria-label="Progression du chargement"></progress>
       </div>
       <strong id="waitingAction" data-i18n="readSelection">Lire la sélection avec RSVP Reader Beta</strong>
+      <label id="localPdfPickerLabel" class="local-pdf-picker hidden">
+        <input id="localPdfPicker" type="file" accept="application/pdf,.pdf">
+        <span data-i18n="chooseLocalPdf">Choisir le fichier PDF</span>
+      </label>
       <p class="quiet" data-i18n="pdfRemainsOpen">Le PDF reste ouvert à la même page, avec vos annotations.</p>
     </section>
     <section id="reader" class="reader hidden">

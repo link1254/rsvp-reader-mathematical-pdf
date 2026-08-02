@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_appName__",
+  "default_locale": "fr",
+  "version": "1.1.0",
+  "version_name": "1.1.0-beta.1 Firefox",
+  "description": "__MSG_appDescription__",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["activeTab", "clipboardWrite", "contextMenus", "storage", "tabs", "windows"],
+  "host_permissions": ["file:///*", "http://*/*", "https://*/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "background": {
+    "scripts": ["src/background.js"],
+    "type": "module"
+  },
+  "action": {
+    "default_title": "__MSG_actionTitle__",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "sidebar_action": {
+    "default_title": "__MSG_actionTitle__",
+    "default_panel": "src/sidepanel.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    },
+    "open_at_install": false
+  },
+  "commands": {
+    "_execute_action": { "suggested_key": { "default": "Alt+Shift+R" } }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "rsvp-reader-beta@link1254.github.io",
+      "strict_min_version": "121.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  }
+}

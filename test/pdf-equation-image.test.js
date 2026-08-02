@@ -4,6 +4,7 @@ import {
   findMathItemRange,
   findMathItemRangeFromContext,
   findNumberedEquationItems,
+  pdfDocumentSource,
   renderEquationImageCanvas,
   resolvePdfUrl,
   visualRsvpItems
@@ -57,6 +58,13 @@ describe('PDF source resolution', () => {
 
   it('uses a direct local PDF tab URL', () => {
     expect(resolvePdfUrl({ tabUrl: 'file:///C:/Documents/physics.pdf' })).toContain('physics.pdf');
+  });
+  it('uses selected local bytes instead of fetching a file URL', () => {
+    const data = new Uint8Array([37, 80, 68, 70]);
+    expect(pdfDocumentSource({ pdfData: data }, 'file:///physics.pdf'))
+      .toEqual({ data });
+    expect(pdfDocumentSource({}, 'https://example.com/physics.pdf'))
+      .toBe('https://example.com/physics.pdf');
   });
   it('extracts a PDF hidden in the Edge viewer URL', () => {
     const payload = { pageUrl: 'extension://viewer/index.html?file=file%3A%2F%2F%2FC%3A%2FDocuments%2Fphysics.pdf' };
