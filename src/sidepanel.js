@@ -49,13 +49,16 @@ import {
 import {
   AUTOMATIC_NATURAL_SPEECH_VOICE,
   AUTOMATIC_SPEECH_VOICE,
+  SPEECH_VOICE_MODE_VERSION,
   availableSpeechVoices,
   buildSpeechChunk,
   detectSpeechLocale,
   isMicrosoftAriaNaturalVoice,
   isMicrosoftDeniseNaturalVoice,
   localSpeechVoices,
+  migrateSpeechVoicePreference,
   selectSpeechVoice,
+  speechLocaleFallbackForSource,
   speechItemIndexAtBoundary,
   speechRateFromWpm
 } from './speech-playback.js';
@@ -72,7 +75,7 @@ const extensionStorage = api?.storage?.local ?? {
   set: async () => {}
 };
 const $ = selector => document.querySelector(selector);
-const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', speechEnabled: false, speechVoiceName: AUTOMATIC_SPEECH_VOICE, speechLocale: null, fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationImagePixelRatios: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, sourceType: null, cropRect: null };
+const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', speechEnabled: false, speechVoiceName: AUTOMATIC_SPEECH_VOICE, speechVoiceModeVersion: SPEECH_VOICE_MODE_VERSION, speechLocale: null, fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationImagePixelRatios: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, sourceType: null, cropRect: null };
 let selectionLoadId = 0;
 let selectionAbortController = null;
 let feedbackController = null;
@@ -398,9 +401,12 @@ function supportedSpeechLocale(value) {
 }
 
 function selectionSpeechLocale(items, payload, sourceType) {
-  const pageLocale = supportedSpeechLocale(payload?.webSelection?.language);
-  const fallbackLocale = pageLocale
-    || (sourceType === SELECTION_SOURCES.PDF ? 'en-US' : 'fr-FR');
+  const fallbackLocale = speechLocaleFallbackForSource({
+    sourceType,
+    sourceUrl: payload?.sourceUrl,
+    pageUrl: payload?.pageUrl,
+    pageLanguage: supportedSpeechLocale(payload?.webSelection?.language)
+  });
   const readableText = items
     .filter(item => item?.type !== 'equation')
     .map(item => item?.value || '')
@@ -1022,11 +1028,12 @@ window.addEventListener('pagehide', stopSpeechPlayback);
 async function save() {
   await extensionStorage.set({
     uiLanguage: state.uiLanguage,
-    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, overviewMathMode: state.overviewMathMode, speechEnabled: state.speechEnabled, speechVoiceName: state.speechVoiceName, fontSize: state.fontSize, equationImageSize: state.equationImageSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
+    panelSettings: { wpm: state.wpm, equationMode: state.equationMode, adaptivePacing: state.adaptivePacing, contextSize: state.contextSize, horizontalContext: state.horizontalContext, overviewMathMode: state.overviewMathMode, speechEnabled: state.speechEnabled, speechVoiceName: state.speechVoiceName, speechVoiceModeVersion: state.speechVoiceModeVersion, fontSize: state.fontSize, equationImageSize: state.equationImageSize, readerFont: state.readerFont, readerTheme: state.readerTheme }
   });
 }
 async function restore() {
   const { panelSettings = {}, uiLanguage = 'auto' } = await extensionStorage.get(['panelSettings', 'uiLanguage']);
+  const previousSpeechVoiceModeVersion = Number(panelSettings.speechVoiceModeVersion) || 0;
   const { betaFeatures: _removedBetaFeature, ...supportedSettings } = panelSettings;
   if (_removedBetaFeature === true) supportedSettings.horizontalContext = false;
   Object.assign(state, supportedSettings);
@@ -1040,9 +1047,12 @@ async function restore() {
   state.horizontalContext = state.horizontalContext === true;
   state.overviewMathMode = normalizeOverviewMathMode(state.overviewMathMode);
   state.speechEnabled = state.speechEnabled === true;
-  state.speechVoiceName = typeof state.speechVoiceName === 'string'
-    ? state.speechVoiceName
-    : AUTOMATIC_SPEECH_VOICE;
+  const speechPreference = migrateSpeechVoicePreference(
+    state.speechVoiceName,
+    previousSpeechVoiceModeVersion
+  );
+  state.speechVoiceName = speechPreference.voiceName;
+  state.speechVoiceModeVersion = speechPreference.version;
   state.equationImageSize = normalizeEquationImageSize(state.equationImageSize);
   state.readerFont = normalizeReaderFont(state.readerFont);
   state.readerTheme = normalizeReaderTheme(state.readerTheme);

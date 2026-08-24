@@ -8,7 +8,9 @@ import {
   isMicrosoftAriaNaturalVoice,
   isMicrosoftDeniseNaturalVoice,
   localSpeechVoices,
+  migrateSpeechVoicePreference,
   selectSpeechVoice,
+  speechLocaleFallbackForSource,
   speechItemIndexAtBoundary,
   speechRateFromWpm
 } from '../src/speech-playback.js';
@@ -71,6 +73,43 @@ describe('synchronized speech playback', () => {
     expect(detectSpeechLocale('The system is defined by the equation.', 'fr')).toBe('en-US');
     expect(detectSpeechLocale('Le système est défini par cette équation.', 'en')).toBe('fr-FR');
     expect(detectSpeechLocale('Hamiltonian', 'en')).toBe('en-US');
+    expect(detectSpeechLocale('Je comprends.', 'en')).toBe('fr-FR');
+    expect(detectSpeechLocale("D'accord.", 'en')).toBe('fr-FR');
+    expect(detectSpeechLocale('I understand.', 'fr')).toBe('en-US');
+  });
+
+  it('uses French as the ambiguous ChatGPT and Claude fallback', () => {
+    expect(speechLocaleFallbackForSource({
+      sourceType: 'html',
+      sourceUrl: 'https://chatgpt.com/c/example',
+      pageLanguage: 'en-US'
+    })).toBe('fr-FR');
+    expect(speechLocaleFallbackForSource({
+      sourceType: 'html',
+      sourceUrl: 'https://claude.ai/chat/example',
+      pageLanguage: 'en-US'
+    })).toBe('fr-FR');
+    expect(speechLocaleFallbackForSource({
+      sourceType: 'html',
+      sourceUrl: 'https://example.com/article',
+      pageLanguage: 'en-US'
+    })).toBe('en-US');
+    expect(speechLocaleFallbackForSource({
+      sourceType: 'pdf',
+      pageLanguage: 'fr-FR'
+    })).toBe('en-US');
+  });
+
+  it('migrates a previously selected Aria voice to automatic language mode once', () => {
+    const aria = 'Microsoft Aria Online (Natural) - English (United States)';
+    expect(migrateSpeechVoicePreference(aria, 0)).toEqual({
+      voiceName: AUTOMATIC_NATURAL_SPEECH_VOICE,
+      version: 1
+    });
+    expect(migrateSpeechVoicePreference(aria, 1)).toEqual({
+      voiceName: aria,
+      version: 1
+    });
   });
 
   it('keeps automatic speech local but allows an explicitly selected online voice', () => {

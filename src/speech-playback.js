@@ -2,16 +2,30 @@ import { joinHyphenatedFragments } from './word-normalization.js';
 
 export const AUTOMATIC_SPEECH_VOICE = 'auto';
 export const AUTOMATIC_NATURAL_SPEECH_VOICE = 'auto-natural';
+export const SPEECH_VOICE_MODE_VERSION = 1;
 export const DEFAULT_SPEECH_RATE_WPM = 200;
 export const MAX_SPEECH_CHUNK_CHARACTERS = 1000;
 
 const FRENCH_MARKERS = new Set([
-  'au', 'aux', 'avec', 'ce', 'ces', 'dans', 'de', 'des', 'du', 'en', 'est',
-  'et', 'la', 'le', 'les', 'nous', 'par', 'pour', 'que', 'qui', 'sur', 'une'
+  'alors', 'après', 'aussi', 'avant', 'avec', 'avoir', 'au', 'aux', 'bien',
+  'ce', 'ces', 'cet', 'cette', 'ceci', 'cela', 'chaque', 'chez', 'comme',
+  'comment', 'dans', 'de', 'des', 'donc', 'du', 'elle', 'elles', 'en',
+  'encore', 'entre', 'est', 'et', 'être', 'faire', 'fait', 'faut', 'il',
+  'ils', 'je', 'la', 'le', 'les', 'leur', 'leurs', 'lui', 'mais', 'même',
+  'mes', 'moins', 'mon', 'ne', 'non', 'notre', 'nous', 'où', 'oui', 'par',
+  'pas', 'peut', 'plus', 'pour', 'pourquoi', 'quand', 'que', 'qui', 'sans',
+  'sera', 'ses', 'sont', 'sous', 'sur', 'ta', 'tes', 'ton', 'tout', 'tous',
+  'toute', 'très', 'tu', 'un', 'une', 'votre', 'vous', 'bonjour', 'merci'
 ]);
 const ENGLISH_MARKERS = new Set([
-  'a', 'and', 'are', 'as', 'by', 'for', 'from', 'in', 'is', 'of', 'on',
-  'that', 'the', 'this', 'to', 'we', 'which', 'with'
+  'a', 'after', 'all', 'also', 'an', 'and', 'any', 'are', 'as', 'be',
+  'been', 'before', 'between', 'by', 'can', 'could', 'did', 'do', 'does',
+  'each', 'for', 'from', 'had', 'has', 'have', 'he', 'her', 'here', 'his',
+  'how', 'i', 'if', 'in', 'is', 'it', 'more', 'most', 'my', 'not', 'of',
+  'on', 'other', 'our', 'she', 'should', 'some', 'than', 'that', 'the',
+  'their', 'them', 'then', 'there', 'they', 'this', 'to', 'was', 'we',
+  'were', 'what', 'when', 'where', 'which', 'who', 'why', 'will', 'with',
+  'without', 'would', 'you', 'your', 'yes'
 ]);
 
 function localePrefix(value) {
@@ -95,8 +109,14 @@ export function speechItemIndexAtBoundary(entries, characterIndex) {
 }
 
 export function detectSpeechLocale(text, fallbackLocale = 'fr') {
-  const words = String(text || '').toLocaleLowerCase().match(/\p{L}+/gu) || [];
-  let frenchScore = /[àâçéèêëîïôùûüÿœ]/u.test(String(text || '').toLocaleLowerCase()) ? 2 : 0;
+  const normalizedText = String(text || '').toLocaleLowerCase();
+  const words = normalizedText.match(/\p{L}+/gu) || [];
+  const accentedLetters = normalizedText.match(/[àâçéèêëîïôùûüÿœæ]/gu) || [];
+  const frenchContractions = normalizedText.match(
+    /(?:^|[\s(\[])\b(?:c|d|j|l|m|n|qu|s|t)[’'][\p{L}]/gu
+  ) || [];
+  let frenchScore = Math.min(6, accentedLetters.length * 2)
+    + frenchContractions.length * 2;
   let englishScore = 0;
   for (const word of words) {
     if (FRENCH_MARKERS.has(word)) frenchScore++;
@@ -105,6 +125,32 @@ export function detectSpeechLocale(text, fallbackLocale = 'fr') {
   if (englishScore > frenchScore) return 'en-US';
   if (frenchScore > englishScore) return 'fr-FR';
   return normalizedLocale(fallbackLocale);
+}
+
+export function speechLocaleFallbackForSource({
+  sourceType,
+  sourceUrl,
+  pageUrl,
+  pageLanguage
+} = {}) {
+  if (sourceType === 'pdf') return 'en-US';
+
+  try {
+    const hostname = new URL(sourceUrl || pageUrl || '').hostname;
+    if (hostname === 'chatgpt.com'
+      || hostname.endsWith('.chatgpt.com')
+      || hostname === 'claude.ai'
+      || hostname.endsWith('.claude.ai')) {
+      return 'fr-FR';
+    }
+  } catch {
+    // Fall back to the page language or the preferred web default below.
+  }
+
+  const pagePrefix = localePrefix(pageLanguage);
+  return pagePrefix === 'en' || pagePrefix === 'fr'
+    ? normalizedLocale(pageLanguage)
+    : 'fr-FR';
 }
 
 export function availableSpeechVoices(voices) {
@@ -124,6 +170,21 @@ export function isMicrosoftDeniseNaturalVoice(voice) {
 
 export function isMicrosoftOnlineNaturalVoice(voice) {
   return /^Microsoft .+ Online \(Natural\)/i.test(String(voice?.voiceName || ''));
+}
+
+export function migrateSpeechVoicePreference(
+  preferredVoiceName,
+  previousVersion = 0
+) {
+  const voiceName = typeof preferredVoiceName === 'string'
+    ? preferredVoiceName
+    : AUTOMATIC_SPEECH_VOICE;
+  const migrateAria = Number(previousVersion) < SPEECH_VOICE_MODE_VERSION
+    && isMicrosoftAriaNaturalVoice({ voiceName, lang: 'en-US' });
+  return {
+    voiceName: migrateAria ? AUTOMATIC_NATURAL_SPEECH_VOICE : voiceName,
+    version: SPEECH_VOICE_MODE_VERSION
+  };
 }
 
 export function localSpeechVoices(voices) {

@@ -68,5 +68,7 @@ describe('synchronized speech controls', () => {
     expect(source).toContain("status.textContent = t('onlineVoicePrivacy')");
     expect(source).toContain('state.speechLocale = selectionSpeechLocale(state.items');
     expect(source).toContain('const locale = state.speechLocale || detectSpeechLocale(');
+    expect(source).toContain('speechLocaleFallbackForSource({');
+    expect(source).toContain('migrateSpeechVoicePreference(');
   });
 });
