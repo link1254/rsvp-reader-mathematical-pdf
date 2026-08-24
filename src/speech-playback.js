@@ -1,6 +1,7 @@
 import { joinHyphenatedFragments } from './word-normalization.js';
 
 export const AUTOMATIC_SPEECH_VOICE = 'auto';
+export const AUTOMATIC_NATURAL_SPEECH_VOICE = 'auto-natural';
 export const DEFAULT_SPEECH_RATE_WPM = 200;
 export const MAX_SPEECH_CHUNK_CHARACTERS = 1000;
 
@@ -116,6 +117,15 @@ export function isMicrosoftAriaNaturalVoice(voice) {
     && String(voice?.lang || '').toLocaleLowerCase() === 'en-us';
 }
 
+export function isMicrosoftDeniseNaturalVoice(voice) {
+  return /^Microsoft Denise Online \(Natural\)/i.test(String(voice?.voiceName || ''))
+    && String(voice?.lang || '').toLocaleLowerCase() === 'fr-fr';
+}
+
+export function isMicrosoftOnlineNaturalVoice(voice) {
+  return /^Microsoft .+ Online \(Natural\)/i.test(String(voice?.voiceName || ''));
+}
+
 export function localSpeechVoices(voices) {
   return availableSpeechVoices(voices)
     .filter(voice => voice.remote !== true);
@@ -128,8 +138,29 @@ export function selectSpeechVoice(
 ) {
   const availableVoices = availableSpeechVoices(voices);
   if (preferredVoiceName && preferredVoiceName !== AUTOMATIC_SPEECH_VOICE) {
-    const selected = availableVoices.find(voice => voice.voiceName === preferredVoiceName);
-    if (selected) return selected;
+    if (preferredVoiceName === AUTOMATIC_NATURAL_SPEECH_VOICE) {
+      const targetLocale = String(locale || '').toLocaleLowerCase();
+      const targetPrefix = localePrefix(targetLocale);
+      const naturalVoice = availableVoices
+        .filter(voice => (
+          isMicrosoftOnlineNaturalVoice(voice)
+          && localePrefix(voice.lang) === targetPrefix
+        ))
+        .map((voice, order) => ({
+          voice,
+          order,
+          score: Number(String(voice.lang || '').toLocaleLowerCase() === targetLocale) * 4
+            + Number(targetPrefix === 'en' && isMicrosoftAriaNaturalVoice(voice)) * 12
+            + Number(targetPrefix === 'fr' && isMicrosoftDeniseNaturalVoice(voice)) * 12
+            + Number(voice.eventTypes?.includes('word') === true) * 6
+        }))
+        .sort((left, right) => right.score - left.score || left.order - right.order)[0]
+        ?.voice;
+      if (naturalVoice) return naturalVoice;
+    } else {
+      const selected = availableVoices.find(voice => voice.voiceName === preferredVoiceName);
+      if (selected) return selected;
+    }
   }
 
   const localVoices = localSpeechVoices(availableVoices);

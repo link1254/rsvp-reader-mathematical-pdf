@@ -149,6 +149,7 @@
       sendResponse({
         title: document.title,
         source: location.href,
+        language: document.documentElement.lang || navigator.language || '',
         text: selection || '',
         segments: selectionSegments()
       });

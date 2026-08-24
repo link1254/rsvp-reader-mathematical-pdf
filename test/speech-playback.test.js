@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AUTOMATIC_NATURAL_SPEECH_VOICE,
   AUTOMATIC_SPEECH_VOICE,
   availableSpeechVoices,
   buildSpeechChunk,
   detectSpeechLocale,
   isMicrosoftAriaNaturalVoice,
+  isMicrosoftDeniseNaturalVoice,
   localSpeechVoices,
   selectSpeechVoice,
   speechItemIndexAtBoundary,
@@ -93,6 +95,35 @@ describe('synchronized speech playback', () => {
       .toBe('Remote English');
   });
 
+  it('selects Aria for English and Denise for French in automatic natural mode', () => {
+    const voices = [
+      { voiceName: 'Microsoft Henri Online (Natural) - French (France)', lang: 'fr-FR', remote: true, eventTypes: ['word'] },
+      { voiceName: 'Microsoft Aria Online (Natural) - English (United States)', lang: 'en-US', remote: true, eventTypes: ['word'] },
+      { voiceName: 'Microsoft Denise Online (Natural) - French (France)', lang: 'fr-FR', remote: true, eventTypes: ['word'] },
+      { voiceName: 'Local French', lang: 'fr-FR', remote: false, eventTypes: ['word'] }
+    ];
+
+    expect(selectSpeechVoice(voices, AUTOMATIC_NATURAL_SPEECH_VOICE, 'en-US')?.voiceName)
+      .toContain('Aria Online (Natural)');
+    expect(selectSpeechVoice(voices, AUTOMATIC_NATURAL_SPEECH_VOICE, 'fr-FR')?.voiceName)
+      .toContain('Denise Online (Natural)');
+  });
+
+  it('falls back to another matching natural voice and then a local voice', () => {
+    const naturalFallback = [
+      { voiceName: 'Microsoft Henri Online (Natural) - French (France)', lang: 'fr-FR', remote: true, eventTypes: ['word'] },
+      { voiceName: 'Local French', lang: 'fr-FR', remote: false, eventTypes: ['word'] }
+    ];
+    const localFallback = [
+      { voiceName: 'Local French', lang: 'fr-FR', remote: false, eventTypes: ['word'] }
+    ];
+
+    expect(selectSpeechVoice(naturalFallback, AUTOMATIC_NATURAL_SPEECH_VOICE, 'fr-FR')?.voiceName)
+      .toContain('Henri Online (Natural)');
+    expect(selectSpeechVoice(localFallback, AUTOMATIC_NATURAL_SPEECH_VOICE, 'fr-FR')?.voiceName)
+      .toBe('Local French');
+  });
+
   it('recognizes the exact Microsoft Aria Natural English voice', () => {
     expect(isMicrosoftAriaNaturalVoice({
       voiceName: 'Microsoft Aria Online (Natural) - English (United States)',
@@ -102,5 +133,9 @@ describe('synchronized speech playback', () => {
       voiceName: 'Microsoft Aria Online (Natural) - French (France)',
       lang: 'fr-FR'
     })).toBe(false);
+    expect(isMicrosoftDeniseNaturalVoice({
+      voiceName: 'Microsoft Denise Online (Natural) - French (France)',
+      lang: 'fr-FR'
+    })).toBe(true);
   });
 });

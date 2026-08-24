@@ -56,12 +56,17 @@ describe('synchronized speech controls', () => {
     expect(stylesheet).toContain('.speed .speech-toggle[aria-pressed="true"]');
   });
 
-  it('labels English and online voices without selecting them automatically', () => {
+  it('offers automatic Aria and Denise voices with an online privacy notice', () => {
+    expect(html).toContain('value="auto-natural"');
+    expect(source).toContain('AUTOMATIC_NATURAL_SPEECH_VOICE');
     expect(source).toContain("groups.en.label = t('englishVoices')");
     expect(source).toContain('isMicrosoftAriaNaturalVoice(voice)');
+    expect(source).toContain('isMicrosoftDeniseNaturalVoice(voice)');
     expect(source).toContain("t('recommendedVoice')");
     expect(source).toContain("voice.remote === true ? 'onlineVoice' : 'localVoice'");
     expect(source).toContain("selectedVoice?.remote === true");
     expect(source).toContain("status.textContent = t('onlineVoicePrivacy')");
+    expect(source).toContain('state.speechLocale = selectionSpeechLocale(state.items');
+    expect(source).toContain('const locale = state.speechLocale || detectSpeechLocale(');
   });
 });

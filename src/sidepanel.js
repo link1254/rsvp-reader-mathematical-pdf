@@ -47,11 +47,13 @@ import {
   t
 } from './i18n.js';
 import {
+  AUTOMATIC_NATURAL_SPEECH_VOICE,
   AUTOMATIC_SPEECH_VOICE,
   availableSpeechVoices,
   buildSpeechChunk,
   detectSpeechLocale,
   isMicrosoftAriaNaturalVoice,
+  isMicrosoftDeniseNaturalVoice,
   localSpeechVoices,
   selectSpeechVoice,
   speechItemIndexAtBoundary,
@@ -70,7 +72,7 @@ const extensionStorage = api?.storage?.local ?? {
   set: async () => {}
 };
 const $ = selector => document.querySelector(selector);
-const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', speechEnabled: false, speechVoiceName: AUTOMATIC_SPEECH_VOICE, fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationImagePixelRatios: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, sourceType: null, cropRect: null };
+const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', speechEnabled: false, speechVoiceName: AUTOMATIC_SPEECH_VOICE, speechLocale: null, fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationImagePixelRatios: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, sourceType: null, cropRect: null };
 let selectionLoadId = 0;
 let selectionAbortController = null;
 let feedbackController = null;
@@ -271,11 +273,18 @@ function applyContextLayout() {
 function speechPlaybackAvailable() {
   const voices = availableSpeechVoices(speechVoices);
   const explicitVoiceAvailable = state.speechVoiceName !== AUTOMATIC_SPEECH_VOICE
+    && state.speechVoiceName !== AUTOMATIC_NATURAL_SPEECH_VOICE
     && voices.some(voice => voice.voiceName === state.speechVoiceName);
+  const automaticNaturalVoiceAvailable = state.speechVoiceName === AUTOMATIC_NATURAL_SPEECH_VOICE
+    && Boolean(selectSpeechVoice(
+      voices,
+      AUTOMATIC_NATURAL_SPEECH_VOICE,
+      state.speechLocale || getUiLanguage()
+    ));
   return Boolean(
     speechApi?.speak
     && speechApi?.stop
-    && (explicitVoiceAvailable || localSpeechVoices(voices).length)
+    && (explicitVoiceAvailable || automaticNaturalVoiceAvailable || localSpeechVoices(voices).length)
   );
 }
 
@@ -286,17 +295,22 @@ function renderSpeechVoiceOptions() {
   const status = $('#speechStatus');
   const voices = availableSpeechVoices(speechVoices)
     .sort((left, right) => {
-      const leftAria = isMicrosoftAriaNaturalVoice(left);
-      const rightAria = isMicrosoftAriaNaturalVoice(right);
+      const leftRecommended = isMicrosoftAriaNaturalVoice(left)
+        || isMicrosoftDeniseNaturalVoice(left);
+      const rightRecommended = isMicrosoftAriaNaturalVoice(right)
+        || isMicrosoftDeniseNaturalVoice(right);
       const leftMicrosoft = /^Microsoft\b/i.test(left.voiceName);
       const rightMicrosoft = /^Microsoft\b/i.test(right.voiceName);
-      return Number(rightAria) - Number(leftAria)
+      return Number(rightRecommended) - Number(leftRecommended)
         || Number(rightMicrosoft) - Number(leftMicrosoft)
         || left.voiceName.localeCompare(right.voiceName);
     });
   const automatic = document.createElement('option');
   automatic.value = AUTOMATIC_SPEECH_VOICE;
   automatic.textContent = t('automaticLocalVoice');
+  const automaticNatural = document.createElement('option');
+  automaticNatural.value = AUTOMATIC_NATURAL_SPEECH_VOICE;
+  automaticNatural.textContent = t('automaticNaturalVoices');
   const groups = {
     en: document.createElement('optgroup'),
     fr: document.createElement('optgroup'),
@@ -310,6 +324,7 @@ function renderSpeechVoiceOptions() {
     option.value = voice.voiceName;
     const location = t(voice.remote === true ? 'onlineVoice' : 'localVoice');
     const recommendation = isMicrosoftAriaNaturalVoice(voice)
+      || isMicrosoftDeniseNaturalVoice(voice)
       ? ` - ${t('recommendedVoice')}`
       : '';
     option.textContent = `${voice.voiceName} (${voice.lang || '—'} - ${location}${recommendation})`;
@@ -317,8 +332,9 @@ function renderSpeechVoiceOptions() {
     groups[language === 'en' || language === 'fr' ? language : 'other'].append(option);
   }
   const populatedGroups = Object.values(groups).filter(group => group.children.length);
-  select.replaceChildren(automatic, ...populatedGroups);
-  if (!voices.some(voice => voice.voiceName === state.speechVoiceName)) {
+  select.replaceChildren(automaticNatural, automatic, ...populatedGroups);
+  if (![AUTOMATIC_NATURAL_SPEECH_VOICE, AUTOMATIC_SPEECH_VOICE].includes(state.speechVoiceName)
+    && !voices.some(voice => voice.voiceName === state.speechVoiceName)) {
     state.speechVoiceName = AUTOMATIC_SPEECH_VOICE;
   }
   select.value = state.speechVoiceName;
@@ -333,8 +349,13 @@ function renderSpeechVoiceOptions() {
   toggle.setAttribute('aria-label', toggleLabel);
   select.disabled = !voices.length;
 
-  const selectedVoice = voices.find(voice => voice.voiceName === state.speechVoiceName);
-  if (selectedVoice?.remote === true) {
+  const selectedVoice = selectSpeechVoice(
+    voices,
+    state.speechVoiceName,
+    state.speechLocale || getUiLanguage()
+  );
+  if (state.speechVoiceName === AUTOMATIC_NATURAL_SPEECH_VOICE
+    || selectedVoice?.remote === true) {
     status.textContent = t('onlineVoicePrivacy');
     status.classList.remove('hidden');
   } else if (!playbackAvailable) {
@@ -367,6 +388,25 @@ function applyLanguage() {
   }
   else restoreWaitingUi();
   feedbackController?.refreshLanguage?.();
+}
+
+function supportedSpeechLocale(value) {
+  const prefix = String(value || '').toLocaleLowerCase().split('-')[0];
+  if (prefix === 'en') return 'en-US';
+  if (prefix === 'fr') return 'fr-FR';
+  return null;
+}
+
+function selectionSpeechLocale(items, payload, sourceType) {
+  const pageLocale = supportedSpeechLocale(payload?.webSelection?.language);
+  const fallbackLocale = pageLocale
+    || (sourceType === SELECTION_SOURCES.PDF ? 'en-US' : 'fr-FR');
+  const readableText = items
+    .filter(item => item?.type !== 'equation')
+    .map(item => item?.value || '')
+    .join(' ')
+    .trim();
+  return detectSpeechLocale(readableText || payload?.text || '', fallbackLocale);
 }
 
 function resizeEquationSnapshot(scale = currentEquationScale) {
@@ -642,7 +682,7 @@ function startSpeechPlayback() {
   }
 
   const runId = speechRunId;
-  const locale = detectSpeechLocale(chunk.text, getUiLanguage());
+  const locale = state.speechLocale || detectSpeechLocale(chunk.text, getUiLanguage());
   const voice = selectSpeechVoice(
     speechVoices,
     state.speechVoiceName,
@@ -748,6 +788,7 @@ async function loadSelection(payload) {
   state.equationLookupComplete = false;
   state.selectionPayload = payload;
   state.sourceType = selectionSource(payload);
+  state.speechLocale = selectionSpeechLocale([], payload, state.sourceType);
   state.pageNumber = null;
   state.pageCapture = payload?.pageCapture || null;
   $('#reader').classList.add('hidden');
@@ -794,6 +835,7 @@ async function loadSelection(payload) {
     state.pageCapture = result.pageCapture || state.pageCapture || null;
     state.pageNumber = result.pageNumber || null;
     state.sourceType = result.sourceType || state.sourceType;
+    state.speechLocale = selectionSpeechLocale(state.items, payload, state.sourceType);
     state.equationLookupComplete = true;
     const count = Object.keys(state.equationImages).length;
     const total = state.items.filter(item => item.type === 'equation').length;
@@ -840,6 +882,7 @@ function clearSelection() {
   equationImagePreloads = [];
   state.selectionPayload = null;
   state.sourceType = null;
+  state.speechLocale = null;
   state.pageCapture = null;
   state.pageNumber = null;
   restoreWaitingUi();
