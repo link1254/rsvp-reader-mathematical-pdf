@@ -44,6 +44,9 @@
     const script = element.matches?.('script[type^="math/tex"]')
       ? element
       : element.querySelector?.('script[type^="math/tex"]');
+    const visibleKatex = element.matches?.('.katex-html')
+      ? element
+      : element.querySelector?.('.katex-html');
     const latex = compactText(
       annotation?.textContent
       || element.getAttribute?.('data-latex')
@@ -53,6 +56,8 @@
     const accessibleText = compactText(
       element.getAttribute?.('aria-label')
       || math?.getAttribute?.('aria-label')
+      || visibleKatex?.innerText
+      || visibleKatex?.textContent
       || math?.textContent
       || element.textContent
     );
@@ -75,12 +80,6 @@
   function selectionSegments() {
     const selection = globalThis.getSelection?.();
     if (!selection?.rangeCount || selection.isCollapsed) return [];
-    const fragment = document.createDocumentFragment();
-    for (let index = 0; index < selection.rangeCount; index++) {
-      if (index) fragment.append(document.createElement('p'));
-      fragment.append(selection.getRangeAt(index).cloneContents());
-    }
-
     const segments = [];
     let textBuffer = '';
 
@@ -99,37 +98,81 @@
       textBuffer += value;
     }
 
-    function visit(node) {
+    function intersects(range, node) {
+      try {
+        return range.intersectsNode(node);
+      } catch {
+        return false;
+      }
+    }
+
+    function closestMathContainer(node) {
+      let element = node?.nodeType === Node.ELEMENT_NODE
+        ? node
+        : node?.parentElement;
+      while (element) {
+        const equation = mathContainer(element);
+        if (equation) return equation;
+        element = element.parentElement;
+      }
+      return null;
+    }
+
+    function selectedText(node, range) {
+      let start = 0;
+      let end = node.nodeValue?.length || 0;
+      if (node === range.startContainer) start = range.startOffset;
+      if (node === range.endContainer) end = range.endOffset;
+      return node.nodeValue?.slice(start, Math.max(start, end)) || '';
+    }
+
+    function visit(node, range) {
+      if (!intersects(range, node)) return false;
       if (node.nodeType === Node.TEXT_NODE) {
-        appendText(node.nodeValue || '');
-        return;
+        appendText(selectedText(node, range));
+        return true;
       }
       if (node.nodeType !== Node.ELEMENT_NODE
-        && node.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) return;
+        && node.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) return false;
 
       if (node.nodeType === Node.ELEMENT_NODE) {
-        if (isHidden(node)) return;
         const equation = mathContainer(node);
         if (equation) {
           flushText(false);
           segments.push(equationData(equation));
-          return;
+          return true;
         }
-        if (SKIPPED_ELEMENTS.has(node.tagName)) return;
+        if (isHidden(node) || SKIPPED_ELEMENTS.has(node.tagName)) return false;
         if (node.tagName === 'BR') {
           flushText(true);
-          return;
+          return true;
         }
       }
 
-      for (const child of [...node.childNodes]) visit(child);
-      if (node.nodeType === Node.ELEMENT_NODE && BLOCK_ELEMENTS.has(node.tagName)) {
+      let contributed = false;
+      for (const child of [...node.childNodes]) {
+        contributed = visit(child, range) || contributed;
+      }
+      if (contributed
+        && node.nodeType === Node.ELEMENT_NODE
+        && BLOCK_ELEMENTS.has(node.tagName)) {
         flushText(true);
       }
+      return contributed;
     }
 
-    visit(fragment);
-    flushText(true);
+    for (let index = 0; index < selection.rangeCount; index++) {
+      if (index) flushText(true);
+      const range = selection.getRangeAt(index);
+      const commonAncestor = range.commonAncestorContainer;
+      const equationAncestor = closestMathContainer(commonAncestor);
+      const root = equationAncestor
+        || (commonAncestor.nodeType === Node.TEXT_NODE
+          ? commonAncestor.parentElement
+          : commonAncestor);
+      if (root) visit(root, range);
+      flushText(true);
+    }
     return segments.filter(segment => segment.type !== 'equation' || segment.value);
   }
 

@@ -35,6 +35,12 @@ describe('web reader integration', () => {
     expect(content).not.toContain('claude.ai');
   });
 
+  it('reads selected equations from the original DOM instead of a partial clone', () => {
+    expect(content).toContain('closestMathContainer(commonAncestor)');
+    expect(content).toContain("element.querySelector?.('.katex-html')");
+    expect(content).not.toContain('cloneContents()');
+  });
+
   it('dispatches both source types into the existing reader interface', () => {
     expect(sidepanel).toContain('renderVisualSelectionFromPdf');
     expect(sidepanel).toContain('renderVisualSelectionFromWeb');
