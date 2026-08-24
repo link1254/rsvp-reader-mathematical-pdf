@@ -20,7 +20,7 @@ import {
   selectionSearchProgress
 } from './loading-progress.js';
 import { t } from './i18n.js';
-import { resolvePdfUrl } from './selection-source.js';
+import { decodeRepeatedly, resolvePdfUrl } from './selection-source.js';
 
 export { resolvePdfUrl } from './selection-source.js';
 
@@ -309,7 +309,7 @@ function findLabelItems(items, label) {
     .map(row => row.at(-1));
 }
 
-function pageHint(payload) {
+export function pageHint(payload) {
   const values = [payload?.tabUrl, payload?.pageUrl, payload?.frameUrl, payload?.sourceUrl].filter(Boolean);
   for (const raw of values) {
     const decoded = decodeRepeatedly(raw);

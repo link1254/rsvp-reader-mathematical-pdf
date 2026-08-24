@@ -3,7 +3,7 @@ export const SELECTION_SOURCES = Object.freeze({
   HTML: 'html'
 });
 
-function decodeRepeatedly(value) {
+export function decodeRepeatedly(value) {
   let decoded = value;
   for (let i = 0; i < 3; i++) {
     try {

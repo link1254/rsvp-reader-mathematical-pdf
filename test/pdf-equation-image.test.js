@@ -4,6 +4,7 @@ import {
   findMathItemRange,
   findMathItemRangeFromContext,
   findNumberedEquationItems,
+  pageHint,
   renderEquationImageCanvas,
   resolvePdfUrl,
   visualRsvpItems
@@ -61,6 +62,13 @@ describe('PDF source resolution', () => {
   it('extracts a PDF hidden in the Edge viewer URL', () => {
     const payload = { pageUrl: 'extension://viewer/index.html?file=file%3A%2F%2F%2FC%3A%2FDocuments%2Fphysics.pdf' };
     expect(resolvePdfUrl(payload)).toBe('file:///C:/Documents/physics.pdf');
+  });
+  it('reads a page hint from a repeatedly encoded PDF viewer URL', () => {
+    const payload = {
+      pageUrl: 'https%253A%252F%252Fexample.com%252Fphysics.pdf%2523page%253D12'
+    };
+
+    expect(pageHint(payload)).toBe(12);
   });
   it('keeps equation parentheses distinct from a section number', () => {
     const section = '1.2.'.replace(/\s/g, '');
