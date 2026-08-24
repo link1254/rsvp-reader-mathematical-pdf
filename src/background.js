@@ -96,6 +96,25 @@ async function structuredWebSelection(tab, frameId) {
   );
 }
 
+function needsWebEquationCapture(webSelection) {
+  return webSelection?.segments?.some(segment => (
+    segment?.type === 'equation'
+    && !segment.latex
+    && !segment.mathml
+    && segment.captureRect
+    && segment.captureViewport
+  ));
+}
+
+async function clearSelectionHighlight(tab, frameId) {
+  const options = Number.isInteger(frameId) ? { frameId } : undefined;
+  await api.tabs.sendMessage(
+    tab.id,
+    { type: 'CLEAR_SELECTION' },
+    options
+  );
+}
+
 api.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== 'rsvp-selection' || !tab?.id) return;
   const basePayload = {
@@ -123,8 +142,13 @@ api.contextMenus.onClicked.addListener(async (info, tab) => {
 
   let pageCapture = null;
   let captureError = null;
-  if (sourceType === SELECTION_SOURCES.PDF) {
+  const captureWebEquation = sourceType === SELECTION_SOURCES.HTML
+    && needsWebEquationCapture(webSelection);
+  if (sourceType === SELECTION_SOURCES.PDF || captureWebEquation) {
     try {
+      if (captureWebEquation) {
+        await clearSelectionHighlight(tab, info.frameId);
+      }
       pageCapture = await api.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
     } catch (error) {
       captureError = String(error?.message || error);

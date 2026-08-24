@@ -40,7 +40,9 @@ export function webSelectionItems(payload) {
       displayMode,
       equationText,
       latex: String(segment.latex || '').trim() || null,
-      mathml: String(segment.mathml || '').trim() || null
+      mathml: String(segment.mathml || '').trim() || null,
+      captureRect: segment.captureRect || null,
+      captureViewport: segment.captureViewport || null
     };
     if (segment.paragraphEnd === true) item.paragraphEnd = true;
     items.push(item);

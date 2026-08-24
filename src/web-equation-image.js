@@ -60,7 +60,8 @@ function safeMathMlNode(source, targetDocument) {
   return element;
 }
 
-function sourceMathMl(item) {
+export function sourceMathMl(item) {
+  if (item.mathml) return item.mathml;
   if (item.latex) {
     return katex.renderToString(item.latex, {
       displayMode: item.displayMode,
@@ -72,7 +73,6 @@ function sourceMathMl(item) {
       maxExpand: 1000
     });
   }
-  if (item.mathml) return item.mathml;
   return katex.renderToString(unicodeMathToLatex(item.equationText), {
     displayMode: item.displayMode,
     output: 'mathml',
@@ -82,6 +82,47 @@ function sourceMathMl(item) {
     maxSize: 20,
     maxExpand: 1000
   });
+}
+
+export function webEquationCaptureCrop(
+  item,
+  imageWidth,
+  imageHeight,
+  padding = 8
+) {
+  const rect = item?.captureRect;
+  const viewport = item?.captureViewport;
+  if (!rect
+    || !viewport
+    || !Number.isFinite(imageWidth)
+    || !Number.isFinite(imageHeight)
+    || imageWidth < 1
+    || imageHeight < 1
+    || !Number.isFinite(viewport.width)
+    || !Number.isFinite(viewport.height)
+    || viewport.width < 1
+    || viewport.height < 1) return null;
+
+  const scaleX = imageWidth / viewport.width;
+  const scaleY = imageHeight / viewport.height;
+  const x0 = Math.max(0, Math.floor((rect.x - padding) * scaleX));
+  const y0 = Math.max(0, Math.floor((rect.y - padding) * scaleY));
+  const x1 = Math.min(
+    imageWidth,
+    Math.ceil((rect.x + rect.width + padding) * scaleX)
+  );
+  const y1 = Math.min(
+    imageHeight,
+    Math.ceil((rect.y + rect.height + padding) * scaleY)
+  );
+  if (x1 <= x0 || y1 <= y0) return null;
+  return {
+    x: x0,
+    y: y0,
+    width: x1 - x0,
+    height: y1 - y0,
+    pixelRatio: Math.min(scaleX, scaleY)
+  };
 }
 
 function sanitizedMathMl(item) {
@@ -100,6 +141,39 @@ async function imageFromSvg(svg) {
   image.src = source;
   await image.decode();
   return image;
+}
+
+async function renderCapturedWebEquation(item, pageCapture) {
+  if (!pageCapture || !item.captureRect || !item.captureViewport) return null;
+  const image = new Image();
+  image.decoding = 'async';
+  image.src = pageCapture;
+  await image.decode();
+  const rect = webEquationCaptureCrop(
+    item,
+    image.naturalWidth,
+    image.naturalHeight
+  );
+  if (!rect) return null;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  canvas.getContext('2d').drawImage(
+    image,
+    rect.x,
+    rect.y,
+    rect.width,
+    rect.height,
+    0,
+    0,
+    rect.width,
+    rect.height
+  );
+  return {
+    dataUrl: canvas.toDataURL('image/png'),
+    pixelRatio: rect.pixelRatio
+  };
 }
 
 export async function renderWebEquationPng(item, { pixelRatio = 2 } = {}) {
@@ -186,7 +260,10 @@ export async function renderVisualSelectionFromWeb(
       value: 35 + Math.round((index / Math.max(1, equations.length)) * 55)
     });
     try {
-      const rendered = await renderWebEquationPng(item);
+      const rendered = (!item.latex && !item.mathml)
+        ? await renderCapturedWebEquation(item, payload?.pageCapture)
+          || await renderWebEquationPng(item)
+        : await renderWebEquationPng(item);
       images[item.equationId] = rendered.dataUrl;
       imagePixelRatios[item.equationId] = rendered.pixelRatio;
     } catch (error) {
@@ -199,7 +276,7 @@ export async function renderVisualSelectionFromWeb(
     items,
     images,
     imagePixelRatios,
-    pageCapture: null,
+    pageCapture: payload?.pageCapture || null,
     pageNumber: null,
     sourceType: 'html',
     detectedCount: Object.keys(images).length

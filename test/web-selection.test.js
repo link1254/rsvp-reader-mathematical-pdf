@@ -62,6 +62,24 @@ describe('structured web selections', () => {
     });
   });
 
+  it('keeps capture geometry for HTML-only equation renderers', () => {
+    const captureRect = { x: 80, y: 120, width: 420, height: 60 };
+    const captureViewport = { width: 1280, height: 720 };
+    const [item] = webSelectionItems({
+      webSelection: {
+        segments: [{
+          type: 'equation',
+          accessibleText: 'correctionsduesàH',
+          captureRect,
+          captureViewport,
+          displayMode: true
+        }]
+      }
+    });
+
+    expect(item).toMatchObject({ captureRect, captureViewport });
+  });
+
   it('falls back to the selected plain text on unsupported pages', () => {
     expect(webSelectionItems({ text: 'A readable fallback.' }))
       .toEqual([

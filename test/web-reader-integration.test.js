@@ -38,7 +38,14 @@ describe('web reader integration', () => {
   it('reads selected equations from the original DOM instead of a partial clone', () => {
     expect(content).toContain('closestMathContainer(commonAncestor)');
     expect(content).toContain("element.querySelector?.('.katex-html')");
+    expect(content).toContain('equationCaptureGeometry');
     expect(content).not.toContain('cloneContents()');
+  });
+
+  it('captures only HTML equations that have no structured math source', () => {
+    expect(background).toContain('needsWebEquationCapture(webSelection)');
+    expect(background).toContain("{ type: 'CLEAR_SELECTION' }");
+    expect(background).toContain('captureWebEquation');
   });
 
   it('dispatches both source types into the existing reader interface', () => {

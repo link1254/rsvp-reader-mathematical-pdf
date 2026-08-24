@@ -34,6 +34,52 @@
     return /^math\/tex/i.test(scriptType) ? element : null;
   }
 
+  function equationCaptureGeometry(element, visibleKatex, math) {
+    const katexLines = visibleKatex
+      ? [...visibleKatex.querySelectorAll?.(':scope > .base') || []]
+      : [];
+    const visualParts = katexLines.length
+      ? katexLines
+      : [element.querySelector?.('mjx-math') || math || visibleKatex || element];
+    const rects = visualParts
+      .map(part => part?.getBoundingClientRect?.())
+      .filter(rect => rect && rect.width >= 1 && rect.height >= 1);
+    const rect = rects.length ? {
+      left: Math.min(...rects.map(value => value.left)),
+      top: Math.min(...rects.map(value => value.top)),
+      right: Math.max(...rects.map(value => value.right)),
+      bottom: Math.max(...rects.map(value => value.bottom))
+    } : null;
+    if (rect) {
+      rect.width = rect.right - rect.left;
+      rect.height = rect.bottom - rect.top;
+    }
+    const viewportWidth = globalThis.innerWidth;
+    const viewportHeight = globalThis.innerHeight;
+    if (!rect
+      || !Number.isFinite(viewportWidth)
+      || !Number.isFinite(viewportHeight)
+      || rect.width < 1
+      || rect.height < 1
+      || rect.left < 0
+      || rect.top < 0
+      || rect.right > viewportWidth
+      || rect.bottom > viewportHeight) return {};
+
+    return {
+      captureRect: {
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height
+      },
+      captureViewport: {
+        width: viewportWidth,
+        height: viewportHeight
+      }
+    };
+  }
+
   function equationData(element) {
     const math = element.matches?.('math')
       ? element
@@ -58,6 +104,7 @@
       || math?.getAttribute?.('aria-label')
       || visibleKatex?.innerText
       || visibleKatex?.textContent
+      || element.innerText
       || math?.textContent
       || element.textContent
     );
@@ -73,7 +120,8 @@
       latex: latex || null,
       mathml: math?.outerHTML || null,
       accessibleText: accessibleText || null,
-      displayMode
+      displayMode,
+      ...equationCaptureGeometry(element, visibleKatex, math)
     };
   }
 
@@ -110,12 +158,12 @@
       let element = node?.nodeType === Node.ELEMENT_NODE
         ? node
         : node?.parentElement;
+      let equation = null;
       while (element) {
-        const equation = mathContainer(element);
-        if (equation) return equation;
+        equation = mathContainer(element) || equation;
         element = element.parentElement;
       }
-      return null;
+      return equation;
     }
 
     function selectedText(node, range) {
@@ -188,6 +236,13 @@
 
   api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const selection = globalThis.getSelection?.()?.toString().trim();
+    if (message.type === 'CLEAR_SELECTION') {
+      globalThis.getSelection?.()?.removeAllRanges();
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        sendResponse({ cleared: true });
+      }));
+      return true;
+    }
     if (message.type === 'GET_STRUCTURED_SELECTION') {
       sendResponse({
         title: document.title,
