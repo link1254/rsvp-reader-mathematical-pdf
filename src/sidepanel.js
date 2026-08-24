@@ -10,6 +10,12 @@ import {
 import { orpIndex } from './text-engine.js';
 import { cropCaptureRect } from './equation-image.js';
 import { renderVisualSelectionFromPdf } from './pdf-equation-image.js';
+import { renderVisualSelectionFromWeb } from './web-equation-image.js';
+import { renderMath } from './math-renderer.js';
+import {
+  SELECTION_SOURCES,
+  selectionSource
+} from './selection-source.js';
 import { copyPngDataUrl } from './image-clipboard.js';
 import { normalizeLoadingProgress } from './loading-progress.js';
 import {
@@ -64,7 +70,7 @@ const extensionStorage = api?.storage?.local ?? {
   set: async () => {}
 };
 const $ = selector => document.querySelector(selector);
-const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', speechEnabled: false, speechVoiceName: AUTOMATIC_SPEECH_VOICE, fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationImagePixelRatios: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, cropRect: null };
+const state = { items: [], index: 0, playing: false, timer: null, wpm: 300, equationMode: 'manual', adaptivePacing: 'normal', contextSize: 3, horizontalContext: false, overviewMathMode: 'labels', speechEnabled: false, speechVoiceName: AUTOMATIC_SPEECH_VOICE, fontSize: 62, equationImageSize: 100, readerFont: 'system', readerTheme: 'classic', uiLanguage: 'auto', equationImages: {}, equationImagePixelRatios: {}, equationLookupComplete: false, pageCapture: null, pageNumber: null, selectionPayload: null, sourceType: null, cropRect: null };
 let selectionLoadId = 0;
 let selectionAbortController = null;
 let feedbackController = null;
@@ -456,25 +462,39 @@ function render() {
   $('#current').classList.toggle('hidden', isEquation);
   applyResponsiveSizing(isEquation);
   $('#equationCard').classList.toggle('hidden', !isEquation);
-  $('#equation').textContent = isEquation && !equationImage
-    ? (state.equationLookupComplete
-        ? (item.errorMessage || t('faithfulCaptureUnavailable'))
-        : t('searchingPdf'))
-    : '';
+  const equation = $('#equation');
+  const webEquation = isEquation && item.sourceType === SELECTION_SOURCES.HTML;
+  if (webEquation && !equationImage) {
+    equation.replaceChildren();
+    renderMath(
+      equation,
+      item.latex || item.equationText || item.value,
+      item.displayMode !== false
+    );
+  } else {
+    equation.textContent = isEquation && !equationImage
+      ? (state.equationLookupComplete
+          ? (item.errorMessage || t('faithfulCaptureUnavailable'))
+          : t('searchingPdf'))
+      : '';
+  }
   $('#equationVisual').classList.toggle('hidden', !isEquation || !equationImage);
-  $('#equation').classList.toggle('hidden', isEquation && !!equationImage);
+  equation.classList.toggle('hidden', isEquation && !!equationImage);
   $('#equationLabel').textContent = equationLabel || '';
   $('#equationLabel').classList.toggle(
     'hidden',
     !isEquation || !equationImage || !equationLabel
   );
-  $('#equationSource').textContent = isEquation && equationImage
-    ? t('localPdfCapture')
-    : (isEquation && state.equationLookupComplete
-        ? (state.pageCapture ? t('frameManually') : t('notationUnidentified'))
-        : t('analyzingPdfPage'));
+  $('#equationSource').textContent = webEquation
+    ? t('localWebEquation')
+    : (isEquation && equationImage
+        ? t('localPdfCapture')
+        : (isEquation && state.equationLookupComplete
+            ? (state.pageCapture ? t('frameManually') : t('notationUnidentified'))
+            : t('analyzingPdfPage')));
   if (isEquation && equationImage) {
     const snapshot = $('#equationSnapshot');
+    snapshot.alt = t(webEquation ? 'webEquationImageAlt' : 'equationImageAlt');
     snapshot.dataset.pixelRatio = String(equationImagePixelRatioFor(item));
     if (snapshot.getAttribute('src') !== equationImage) {
       snapshot.style.removeProperty('width');
@@ -727,16 +747,36 @@ async function loadSelection(payload) {
   equationImagePreloads = [];
   state.equationLookupComplete = false;
   state.selectionPayload = payload;
+  state.sourceType = selectionSource(payload);
   state.pageNumber = null;
   state.pageCapture = payload?.pageCapture || null;
   $('#reader').classList.add('hidden');
   $('#waiting').classList.remove('hidden');
-  $('#waiting h1').textContent = t('localMathAnalysis');
-  setLoadingProgress(t('openingPdf'), { indeterminate: true });
+  const isWebSelection = state.sourceType === SELECTION_SOURCES.HTML;
+  $('#waiting h1').textContent = t(
+    isWebSelection ? 'preparingWebReading' : 'localMathAnalysis'
+  );
+  setLoadingProgress(
+    t(isWebSelection ? 'preparingWebSelection' : 'openingPdf'),
+    isWebSelection ? { value: 10 } : { indeterminate: true }
+  );
   $('#waitingAction').textContent = t('documentStaysLocal');
-  try { $('#source').textContent = payload.sourceUrl ? new URL(payload.sourceUrl).pathname.split('/').pop() || t('openPdf') : t('pdfSelection'); } catch { $('#source').textContent = t('pdfSelection'); }
+  if (isWebSelection) {
+    try {
+      $('#source').textContent = payload.pageTitle
+        || new URL(payload.sourceUrl).hostname
+        || t('webSelection');
+    } catch {
+      $('#source').textContent = t('webSelection');
+    }
+  } else {
+    try { $('#source').textContent = payload.sourceUrl ? new URL(payload.sourceUrl).pathname.split('/').pop() || t('openPdf') : t('pdfSelection'); } catch { $('#source').textContent = t('pdfSelection'); }
+  }
   try {
-    const result = await renderVisualSelectionFromPdf(
+    const renderSelection = isWebSelection
+      ? renderVisualSelectionFromWeb
+      : renderVisualSelectionFromPdf;
+    const result = await renderSelection(
       payload,
       (status, progress) => {
         if (loadId === selectionLoadId) setLoadingProgress(status, progress);
@@ -753,6 +793,7 @@ async function loadSelection(payload) {
     equationImagePreloads = preloadedEquationImages;
     state.pageCapture = result.pageCapture || state.pageCapture || null;
     state.pageNumber = result.pageNumber || null;
+    state.sourceType = result.sourceType || state.sourceType;
     state.equationLookupComplete = true;
     const count = Object.keys(state.equationImages).length;
     const total = state.items.filter(item => item.type === 'equation').length;
@@ -778,10 +819,10 @@ async function loadSelection(payload) {
   $('#waiting').classList.add('hidden');
   $('#reader').classList.remove('hidden');
   $('#captureButton').classList.remove('hidden');
-  $('#captureButton').disabled = !state.pageCapture;
-  $('#captureButton').title = state.pageCapture
-    ? t('chooseNotation')
-    : t('manualCaptureUnavailable');
+  $('#captureButton').disabled = isWebSelection || !state.pageCapture;
+  $('#captureButton').title = isWebSelection
+    ? t('webEquationsDetected')
+    : (state.pageCapture ? t('chooseNotation') : t('manualCaptureUnavailable'));
   $('#seek').max = state.items.length - 1;
   renderParagraphOverview();
   render();
@@ -798,6 +839,7 @@ function clearSelection() {
   state.equationImagePixelRatios = {};
   equationImagePreloads = [];
   state.selectionPayload = null;
+  state.sourceType = null;
   state.pageCapture = null;
   state.pageNumber = null;
   restoreWaitingUi();

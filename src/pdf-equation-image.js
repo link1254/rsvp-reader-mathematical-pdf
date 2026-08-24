@@ -20,6 +20,9 @@ import {
   selectionSearchProgress
 } from './loading-progress.js';
 import { t } from './i18n.js';
+import { resolvePdfUrl } from './selection-source.js';
+
+export { resolvePdfUrl } from './selection-source.js';
 
 const DETECTION_RENDER_SCALE = 2;
 const TARGET_EQUATION_PIXEL_RATIO = 2;
@@ -81,31 +84,6 @@ function reportDetectionProgress(onStatus, stage, progress = {}) {
     states[stage] || t('localMathAnalysisProgress'),
     detectionStageProgress(stage, progress)
   );
-}
-
-function decodeRepeatedly(value) {
-  let decoded = value;
-  for (let i = 0; i < 3; i++) {
-    try { const next = decodeURIComponent(decoded); if (next === decoded) break; decoded = next; } catch { break; }
-  }
-  return decoded;
-}
-
-export function resolvePdfUrl(payload) {
-  const values = [payload?.tabUrl, payload?.pageUrl, payload?.frameUrl, payload?.sourceUrl].filter(Boolean);
-  for (const raw of values) {
-    const decoded = decodeRepeatedly(raw);
-    const direct = decoded.match(/(?:file|https?):\/\/[^?#"']+\.pdf(?:[?#][^"']*)?/i)?.[0];
-    if (direct) return direct;
-    try {
-      const url = new URL(raw);
-      for (const key of ['file', 'url', 'src']) {
-        const value = url.searchParams.get(key);
-        if (value && /\.pdf(?:$|[?#])/i.test(value)) return decodeRepeatedly(value);
-      }
-    } catch { /* URL interne non standard */ }
-  }
-  return null;
 }
 
 function word(value) { return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }

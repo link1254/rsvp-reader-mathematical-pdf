@@ -3,7 +3,7 @@
     "message": "RSVP Reader - Mathematical PDF"
   },
   "appDescription": {
-    "message": "Local RSVP reader for scientific PDFs with faithful mathematical notation detection and captures."
+    "message": "Local RSVP reader for scientific PDFs and web pages with faithful mathematical notation rendering."
   },
   "actionTitle": {
     "message": "Open RSVP Reader"

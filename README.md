@@ -1,9 +1,9 @@
 # RSVP Reader - Mathematical PDF
 
-Stable version `1.0.1` from the `main` branch. New features continue to be
-developed and tested on `dev/new-features`. An experimental Firefox port is
-available separately from the [`dev/firefox`](https://github.com/link1254/rsvp-reader-mathematical-pdf/tree/dev/firefox)
-branch.
+Experimental version `1.1.0-beta.1 Web` from the `dev/web-reader` branch. It
+keeps the stable reader interface and automatically supports both PDF
+selections and structured selections from web pages. The stable version remains
+available on `main`.
 
 **English** | [Français](README.fr.md)
 
@@ -74,6 +74,34 @@ states that it supports nearly all Chromium-compatible extensions. Firefox uses
 a dedicated manifest, build, and compatibility layer kept on the separate
 `dev/firefox` branch; details are available in the
 [Firefox compatibility](#firefox-compatibility) section.
+
+## Web page reader beta
+
+This branch adds web pages without creating a second reader interface. The same
+context-menu command and reader window are used in both cases:
+
+- a PDF selection keeps the existing local PDF analysis and faithful captures;
+- an HTML selection is read directly from the page and does not load the local
+  mathematical detection model;
+- KaTeX, MathML, and MathJax expressions are rendered locally as high-density
+  equation images, with the existing equation controls and overview;
+- ChatGPT and Claude are supported through the generic page structure rather
+  than fragile site-specific selectors.
+
+To test this branch in a separate directory:
+
+```bash
+git clone --branch dev/web-reader --single-branch https://github.com/link1254/rsvp-reader-mathematical-pdf.git rsvp-reader-web-beta
+cd rsvp-reader-web-beta
+npm install
+npm run check
+```
+
+Then load `dist` as an unpacked extension using the existing Chromium
+instructions below. Select a completed response or passage, right-click it, and
+choose **Read selection with RSVP Reader**. Code blocks and complex tables are
+currently linearized as text; equations rendered only as opaque images may fall
+back to the ordinary mathematical-text detector.
 
 ## Installation
 
@@ -257,7 +285,8 @@ Permissions are used to create the context menu, inspect the active tab, capture
 the visible page, open and remember the RSVP window, store settings, synthesize
 speech with the selected system voice, and copy an equation to the clipboard.
 The `file://`, `http://`, and `https://` permissions allow the extension to
-access the selected PDF.
+access the selected document. On an HTML page, the structured-content script is
+injected only after the user explicitly invokes RSVP Reader on a selection.
 
 ## Firefox compatibility
 
